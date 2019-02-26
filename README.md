@@ -9,5 +9,5 @@ allprojects {
 	}
 
 dependencies {
-	        implementation 'com.github.yundequanshi:OpenCvCommonlyUsed:V0.0.4-release'
+	        implementation 'com.github.yundequanshi:OpenCvCommonlyUsed:V1.0.0-release'
 	}
