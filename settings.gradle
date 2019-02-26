@@ -1,1 +1,1 @@
-include ':app', ':opencvlib401','cameraview'
+include ':app', ':opencvlib345', ':opencvuilts','cameraview'
