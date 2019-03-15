@@ -36,34 +36,32 @@ public class ScannerUtils {
         Imgproc.findContours(scanImage, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
 
         //按面积排序，最后只取面积最大的那个
-        Collections.sort(contours, new Comparator<MatOfPoint>() {
-            @Override
-            public int compare(MatOfPoint matOfPoint1, MatOfPoint matOfPoint2) {
-                double oneArea = Math.abs(Imgproc.contourArea(matOfPoint1));
-                double twoArea = Math.abs(Imgproc.contourArea(matOfPoint2));
-                return Double.compare(twoArea, oneArea);
+        if (contours.isEmpty()) {
+            return resultArr;
+        }
+        MatOfPoint maxMatOfPoint = contours.get(0);
+        double firstArea = Math.abs(Imgproc.contourArea(maxMatOfPoint));
+        int num = contours.size() - 1;
+        while (num > 0) {
+            double area = Math.abs(Imgproc.contourArea(contours.get(num)));
+            if (area > firstArea) {
+                maxMatOfPoint = contours.get(num);
+                firstArea = area;
             }
-        });
+            num--;
+        }
 
-        if (contours.size() > 0) {
-            //  取面积最大的
-            MatOfPoint2f contour2f = new MatOfPoint2f(contours.get(0).toArray());
-            double arc = Imgproc.arcLength(contour2f, true);
+        Log.d("最大面积",firstArea+"");
 
-            MatOfPoint2f outDpMat = new MatOfPoint2f();
-            Imgproc.approxPolyDP(contour2f, outDpMat, 0.02 * arc, true);//  多边形逼近
-            //  筛选去除相近的点
-            MatOfPoint2f selectMat = selectPoint(outDpMat, 1);
-
-            double area = Math.abs(Imgproc.contourArea(selectMat));
-
-            Log.d("扫描", area + "");
-
-            if (area > 11000) {
-                if (selectMat.toArray().length == 4) {
-                    resultArr = selectMat.toArray();
-                }
-            }
+        MatOfPoint2f maxMatOfPoint2f = new MatOfPoint2f(maxMatOfPoint.toArray());
+        double arc = Imgproc.arcLength(maxMatOfPoint2f, true);
+        MatOfPoint2f outDpMat = new MatOfPoint2f();
+        Imgproc.approxPolyDP(maxMatOfPoint2f, outDpMat, 0.02 * arc, true);//  多边形逼近
+        //  筛选去除相近的点
+        MatOfPoint2f selectMat = selectPoint(outDpMat, 1);
+        Log.d("点数",outDpMat.toArray().length+"");
+        if (outDpMat.toArray().length == 4) {
+            resultArr = outDpMat.toArray();
         }
         //  对最终检测出的四个点进行排序：左上、右上、右下、左下
         if (resultArr != null) {

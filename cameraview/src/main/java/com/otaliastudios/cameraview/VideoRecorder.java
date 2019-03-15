@@ -23,6 +23,7 @@ abstract class VideoRecorder {
 
     abstract void stop();
 
+    @SuppressWarnings("WeakerAccess")
     protected void dispatchResult() {
         if (mListener != null) {
             mListener.onVideoResult(mResult);

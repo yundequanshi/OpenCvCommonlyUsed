@@ -1,9 +1,12 @@
 package com.otaliastudios.cameraview;
 
 import android.hardware.Camera;
+
+import android.media.ExifInterface;
+import android.os.Build.VERSION_CODES;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.media.ExifInterface;
+import android.support.annotation.RequiresApi;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
@@ -42,6 +45,7 @@ class FullPictureRecorder extends PictureRecorder {
                 null,
                 null,
                 new Camera.PictureCallback() {
+                    @RequiresApi(api = VERSION_CODES.N)
                     @Override
                     public void onPictureTaken(byte[] data, final Camera camera) {
                         int exifRotation;

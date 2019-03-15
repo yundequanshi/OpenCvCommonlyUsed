@@ -6,12 +6,14 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.hardware.Camera;
+import android.media.ExifInterface;
+import android.os.Build.VERSION_CODES;
 import android.os.Handler;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.annotation.WorkerThread;
-import android.support.media.ExifInterface;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -226,6 +228,7 @@ public class CameraUtils {
      * @param options the options to be passed to decodeByteArray
      * @return decoded bitmap or null if error is encountered
      */
+    @RequiresApi(api = VERSION_CODES.N)
     @SuppressWarnings({"SuspiciousNameCombination", "WeakerAccess"})
     @Nullable
     @WorkerThread
@@ -235,6 +238,7 @@ public class CameraUtils {
 
     // Null: got OOM
     // TODO ignores flipping. but it should be super rare.
+    @RequiresApi(api = VERSION_CODES.N)
     @Nullable
     static Bitmap decodeBitmap(@NonNull byte[] source, int maxWidth, int maxHeight, @NonNull BitmapFactory.Options options, int rotation) {
         if (maxWidth <= 0) maxWidth = Integer.MAX_VALUE;

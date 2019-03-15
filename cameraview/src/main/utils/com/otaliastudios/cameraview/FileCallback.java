@@ -1,6 +1,5 @@
 package com.otaliastudios.cameraview;
 
-import android.graphics.Bitmap;
 
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
