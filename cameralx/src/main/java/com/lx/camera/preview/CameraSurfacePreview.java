@@ -34,11 +34,11 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import com.lx.camera.R;
+import com.lx.camera.entiy.PreviewAndTakeBitmapCallback;
 import com.lx.camera.utils.AffineTransformator;
 import com.lx.camera.utils.BestPreviewSizeTool;
 import com.lx.camera.utils.EffectiveMagician;
 import com.lx.camera.utils.ExcelentRotator;
-import com.lx.camera.entiy.PreviewAndTakeBitmapCallback;
 import com.lx.camera.utils.ViewUtils;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -342,7 +342,7 @@ public class CameraSurfacePreview extends SurfaceView
     @Override
     public void onAutoFocus(final boolean success, final Camera camera) {
 
-        if (isPreviewTakePhoto) {
+        if (isPreviewTakePhoto || !isHandTake) {
             mCamera.takePicture(null, null, this);
         }
 
@@ -612,10 +612,10 @@ public class CameraSurfacePreview extends SurfaceView
                                 mPreviewCallback.onTakeBitmapCallback(bitmap);
                             }
                         }
-                        isHandTake = true;
                         new Handler().postDelayed(new Runnable() {
                             @Override
                             public void run() {
+                                isHandTake = true;
                                 processFrame = true;
                             }
                         }, 2000);
@@ -641,22 +641,27 @@ public class CameraSurfacePreview extends SurfaceView
      * 聚焦文档
      */
     private boolean setUpFocus() {
-        List<String> focusModes = mParameters.getSupportedFocusModes();
-        if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
-            Rect rArea = getBoundingBox(Arrays.copyOf(sheetXCoords, sheetXCoords.length),
-                    Arrays.copyOf(sheetYCoords, sheetYCoords.length));
-            rArea = convert(rArea, previewFrameWidth, previewFrameHeight);
-            Camera.Area area = new Camera.Area(rArea, 1000);
-            if (mParameters.getMaxNumFocusAreas() > 0) {
-                mParameters.setFocusAreas(Collections.singletonList(area));
-            }
+        try {
+            Parameters parameters = mCamera.getParameters();
+            List<String> focusModes = parameters.getSupportedFocusModes();
+            if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                Rect rArea = getBoundingBox(Arrays.copyOf(sheetXCoords, sheetXCoords.length),
+                        Arrays.copyOf(sheetYCoords, sheetYCoords.length));
+                rArea = convert(rArea, previewFrameWidth, previewFrameHeight);
+                Camera.Area area = new Camera.Area(rArea, 1000);
+                if (parameters.getMaxNumFocusAreas() > 0) {
+                    parameters.setFocusAreas(Collections.singletonList(area));
+                }
 
-            if (mParameters.getMaxNumMeteringAreas() > 0) {
-                mParameters.setMeteringAreas(Collections.singletonList(area));
+                if (parameters.getMaxNumMeteringAreas() > 0) {
+                    parameters.setMeteringAreas(Collections.singletonList(area));
+                }
+                mCamera.setParameters(parameters);
+                return true;
+            } else {
+                return false;
             }
-            mCamera.setParameters(mParameters);
-            return true;
-        } else {
+        } catch (Exception e) {
             return false;
         }
     }

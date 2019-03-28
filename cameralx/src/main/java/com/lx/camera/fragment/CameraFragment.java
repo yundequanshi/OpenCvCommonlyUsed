@@ -3,6 +3,9 @@ package com.lx.camera.fragment;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -52,6 +55,8 @@ public class CameraFragment extends Fragment {
 
     private PreviewAndTakeStringCallback mStringCallback;
 
+    private MediaPlayer mediaPlayer = null;
+
     public CameraFragment() {
     }
 
@@ -73,6 +78,8 @@ public class CameraFragment extends Fragment {
         preview = mView.findViewById(R.id.camera_preview);
         mProgressBar = mView.findViewById(R.id.progress_bar);
         focusMarker = mView.findViewById(R.id.focus_marker);
+        mediaPlayer = MediaPlayer.create(getContext(), R.raw.take);
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
     }
 
     @Override
@@ -165,9 +172,9 @@ public class CameraFragment extends Fragment {
                     @Override
                     public void onNext(final String bitmapString) {
                         if (mStringCallback != null) {
-                            if(isPreview){
+                            if (isPreview) {
                                 mStringCallback.onPreviewStringCallback(bitmapString);
-                            }else {
+                            } else {
                                 mStringCallback.onTakeStringCallback(bitmapString);
                             }
                         }
@@ -193,6 +200,13 @@ public class CameraFragment extends Fragment {
     }
 
     /**
+     * 拍照/自动预览获取文档储存地址
+     */
+    public void setPreviewAndTakeStringCallback(final PreviewAndTakeStringCallback stringCallback) {
+        mStringCallback = stringCallback;
+    }
+
+    /**
      * 闪光灯开关（默认是关）
      */
     public void setFlashOpenClose() {
@@ -215,6 +229,13 @@ public class CameraFragment extends Fragment {
      */
     public void takeHandPhoto() {
         if (surfacePreview != null) {
+            mediaPlayer.start();
+            mediaPlayer.setOnCompletionListener(new OnCompletionListener() {
+                @Override
+                public void onCompletion(final MediaPlayer mp) {
+                    mediaPlayer.pause();
+                }
+            });
             surfacePreview.takeHandPhoto();
         }
     }
