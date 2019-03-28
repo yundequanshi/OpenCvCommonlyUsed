@@ -22,18 +22,24 @@
         android:layout_height="match_parent"
         android:layout_gravity="start|top" />
 
-    <android.support.v4.widget.ContentLoadingProgressBar
-        android:id="@+id/progress_bar"
-        style="@style/Widget.AppCompat.ProgressBar"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_gravity="center"
-        android:visibility="gone" />
-
     <View
         android:id="@+id/focus_marker"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:background="@drawable/focus_marker"
         android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/flProgressBar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:visibility="gone">
+
+        <android.support.v4.widget.ContentLoadingProgressBar
+            style="@style/Widget.AppCompat.ProgressBar"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center" />
+    </FrameLayout>
 </FrameLayout>

@@ -1,4 +1,4 @@
-package com.lx.camera;
+package com.lx.app.test;
 
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -9,6 +9,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ImageView;
 import com.lx.camera.entiy.PreviewAndTakeBitmapCallback;
+import com.lx.camera.entiy.PreviewAndTakeStringCallback;
 import com.lx.camera.fragment.CameraFragment;
 
 public class MainActivity extends AppCompatActivity {
@@ -49,6 +50,17 @@ public class MainActivity extends AppCompatActivity {
                         ivResult.setImageBitmap(null);
                     }
                 }, delayTime);
+            }
+        });
+        cameraFragment.setPreviewAndTakeStringCallback(new PreviewAndTakeStringCallback() {
+            @Override
+            public void onPreviewStringCallback(final String result) {
+
+            }
+
+            @Override
+            public void onTakeStringCallback(final String result) {
+
             }
         });
         btnTake.setOnClickListener(new OnClickListener() {

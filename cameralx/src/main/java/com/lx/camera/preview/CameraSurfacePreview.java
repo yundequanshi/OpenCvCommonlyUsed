@@ -21,11 +21,13 @@ import android.graphics.RectF;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.Parameters;
+import android.media.AudioManager;
 import android.media.ExifInterface;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.widget.ContentLoadingProgressBar;
 import android.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
@@ -33,6 +35,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import com.lx.camera.R;
 import com.lx.camera.entiy.PreviewAndTakeBitmapCallback;
@@ -85,7 +88,7 @@ public class CameraSurfacePreview extends SurfaceView
 
     private View focusMarker;
 
-    private ContentLoadingProgressBar mProgressBar;
+    private FrameLayout mProgressBar;
 
     private Canvas canvas;
 
@@ -123,6 +126,8 @@ public class CameraSurfacePreview extends SurfaceView
 
     private int delayAutoWhat = 10000;
 
+    private MediaPlayer mediaPlayer = null;
+
     @SuppressLint("HandlerLeak")
     private Handler mHandler = new Handler() {
         @Override
@@ -142,7 +147,7 @@ public class CameraSurfacePreview extends SurfaceView
     };
 
     public CameraSurfacePreview(final Context context, ImageView canvasFrame, View focusMarker,
-            ContentLoadingProgressBar mProgressBar) {
+            FrameLayout mProgressBar) {
         super(context);
         this.canvasFrame = canvasFrame;
         this.focusMarker = focusMarker;
@@ -158,6 +163,8 @@ public class CameraSurfacePreview extends SurfaceView
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         mHolder.setKeepScreenOn(true);
+        mediaPlayer = MediaPlayer.create(getContext(), R.raw.take);
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
     }
 
     private Camera getCameraInstance() {
@@ -332,6 +339,13 @@ public class CameraSurfacePreview extends SurfaceView
         mHandler.removeMessages(delayWhat);
         mHandler.removeMessages(delayAutoWhat);
         if (!isPreviewTakePhoto) {
+            mediaPlayer.start();
+            mediaPlayer.setOnCompletionListener(new OnCompletionListener() {
+                @Override
+                public void onCompletion(final MediaPlayer mp) {
+                    mediaPlayer.pause();
+                }
+            });
             takePhoto();
         }
     }

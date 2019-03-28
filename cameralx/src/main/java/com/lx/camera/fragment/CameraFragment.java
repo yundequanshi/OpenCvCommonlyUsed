@@ -3,13 +3,9 @@ package com.lx.camera.fragment;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.ContentLoadingProgressBar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,15 +43,13 @@ public class CameraFragment extends Fragment {
 
     private CameraSurfacePreview surfacePreview = null;
 
-    private ContentLoadingProgressBar mProgressBar;
+    private FrameLayout mProgressBar;
 
     private View focusMarker;
 
     private PreviewAndTakeBitmapCallback mCallback = null;
 
     private PreviewAndTakeStringCallback mStringCallback;
-
-    private MediaPlayer mediaPlayer = null;
 
     public CameraFragment() {
     }
@@ -76,10 +70,8 @@ public class CameraFragment extends Fragment {
     private void initView(LayoutInflater inflater, ViewGroup container) {
         mView = inflater.inflate(R.layout.fragment_camera, container, false);
         preview = mView.findViewById(R.id.camera_preview);
-        mProgressBar = mView.findViewById(R.id.progress_bar);
+        mProgressBar = mView.findViewById(R.id.flProgressBar);
         focusMarker = mView.findViewById(R.id.focus_marker);
-        mediaPlayer = MediaPlayer.create(getContext(), R.raw.take);
-        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
     }
 
     @Override
@@ -91,7 +83,6 @@ public class CameraFragment extends Fragment {
             preview.removeAllViews();
         }
         requestCameraPermission();
-        requestWritePermission(null, false);
     }
 
     @Override
@@ -106,7 +97,8 @@ public class CameraFragment extends Fragment {
 
     @AfterPermissionGranted(RC_CAMERA_PERM)
     private void requestCameraPermission() {
-        String[] perms = {Manifest.permission.CAMERA};
+        String[] perms = {Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE};
         if (EasyPermissions.hasPermissions(getContext(), perms)) {
             ImageView canvasFrame = mView.findViewById(R.id.camera_drawing_pane);
             surfacePreview = new CameraSurfacePreview(getContext(), canvasFrame, focusMarker, mProgressBar);
@@ -133,13 +125,14 @@ public class CameraFragment extends Fragment {
                 }
             });
         } else {
-            EasyPermissions.requestPermissions(this, "您拒绝了摄像权限，功能没法使用，请设置权限",
+            EasyPermissions.requestPermissions(this, "您拒绝了我们的权限，功能没法使用，请设置权限",
                     RC_CAMERA_PERM, perms);
         }
     }
 
     @AfterPermissionGranted(RC_WRITE_PERM)
     private void requestWritePermission(Bitmap bitmap, boolean isPreview) {
+        mProgressBar.setVisibility(View.VISIBLE);
         String[] perms = {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
         if (EasyPermissions.hasPermissions(getContext(), perms)) {
             if (bitmap != null) {
@@ -171,6 +164,7 @@ public class CameraFragment extends Fragment {
 
                     @Override
                     public void onNext(final String bitmapString) {
+                        mProgressBar.setVisibility(View.GONE);
                         if (mStringCallback != null) {
                             if (isPreview) {
                                 mStringCallback.onPreviewStringCallback(bitmapString);
@@ -229,13 +223,6 @@ public class CameraFragment extends Fragment {
      */
     public void takeHandPhoto() {
         if (surfacePreview != null) {
-            mediaPlayer.start();
-            mediaPlayer.setOnCompletionListener(new OnCompletionListener() {
-                @Override
-                public void onCompletion(final MediaPlayer mp) {
-                    mediaPlayer.pause();
-                }
-            });
             surfacePreview.takeHandPhoto();
         }
     }
