@@ -212,10 +212,11 @@ public class CameraFragment extends Fragment {
     /**
      * 是否自动扫描文档
      */
-    public void setScanDocument(boolean isHandTake) {
+    public boolean setScanDocument(boolean isHandTake) {
         if (surfacePreview != null) {
-            surfacePreview.setScanDocument(isHandTake);
+            return surfacePreview.setScanDocument(isHandTake);
         }
+        return false;
     }
 
     /**

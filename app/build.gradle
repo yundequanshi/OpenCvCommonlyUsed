@@ -30,6 +30,6 @@ dependencies {
     implementation 'com.github.pqpo:SmartCropper:v1.2.3'
     implementation 'com.github.bumptech.glide:glide:4.9.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
-//    implementation 'com.github.yundequanshi:OpenCvCommonlyUsed:V1.0.0-release'
+    //    implementation 'com.github.yundequanshi:OpenCvCommonlyUsed:V1.0.0-release'
     implementation project(':opencvuilts')
 }

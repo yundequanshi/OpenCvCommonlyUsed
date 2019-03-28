@@ -128,6 +128,8 @@ public class CameraSurfacePreview extends SurfaceView
 
     private MediaPlayer mediaPlayer = null;
 
+    private boolean isScan = true;
+
     @SuppressLint("HandlerLeak")
     private Handler mHandler = new Handler() {
         @Override
@@ -353,10 +355,26 @@ public class CameraSurfacePreview extends SurfaceView
     /**
      * 是否自动扫描文档
      */
-    public void setScanDocument(boolean isHandTake) {
-        this.isHandTake = isHandTake;
-        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-        mLinePath.reset();
+    public boolean setScanDocument(boolean isScan) {
+        boolean isSuccess = true;
+        if (isScan) {
+            this.isScan = isScan;
+            mHandler.sendEmptyMessageDelayed(delayWhat, delayTime);
+            mHandler.sendEmptyMessageDelayed(delayAutoWhat, delayAutoTime);
+        } else {
+            if (isPreviewTakePhoto) {
+                this.isScan = true;
+                isSuccess = false;
+            } else {
+                this.isScan = isScan;
+                processFrame = false;
+                mHandler.removeMessages(delayWhat);
+                mHandler.removeMessages(delayAutoWhat);
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                mLinePath.reset();
+            }
+        }
+        return isSuccess;
     }
 
     /**
@@ -381,11 +399,9 @@ public class CameraSurfacePreview extends SurfaceView
 
     @Override
     public void onAutoFocus(final boolean success, final Camera camera) {
-
         if (isPreviewTakePhoto || !isHandTake) {
             mCamera.takePicture(null, null, this);
         }
-
         if (currentFocusMode != null) {
             mParameters.setFocusMode(currentFocusMode);
             camera.setParameters(mParameters);
@@ -548,7 +564,7 @@ public class CameraSurfacePreview extends SurfaceView
 
     @Override
     public void onPreviewFrame(final byte[] data, final Camera camera) {
-        if (processFrame && isHandTake) {
+        if (processFrame && isHandTake && currentFocusMode == null) {
             processFrame = false;
             previewFrame(data);
         }
@@ -653,10 +669,14 @@ public class CameraSurfacePreview extends SurfaceView
                             }
                         }
                         isPreviewTakePhoto = false;
-                        mHandler.sendEmptyMessageDelayed(delayWhat, delayTime);
-                        mHandler.sendEmptyMessageDelayed(delayAutoWhat, delayAutoTime);
-                        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                        mLinePath.reset();
+                        if (isScan) {
+                            mHandler.sendEmptyMessageDelayed(delayWhat, delayTime);
+                            mHandler.sendEmptyMessageDelayed(delayAutoWhat, delayAutoTime);
+                            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                            mLinePath.reset();
+                        } else {
+                            isHandTake = true;
+                        }
                         mProgressBar.setVisibility(GONE);
                         mCamera.startPreview();
                     }

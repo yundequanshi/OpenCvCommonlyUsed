@@ -17,6 +17,20 @@
         android:layout_gravity="center" />
 
     <Button
+        android:id="@+id/btnFlash"
+        android:layout_width="100dp"
+        android:layout_height="60dp"
+        android:text="闪光灯"
+        android:layout_gravity="top"/>
+
+    <Button
+        android:id="@+id/btnAuto"
+        android:layout_width="100dp"
+        android:layout_height="60dp"
+        android:text="手动"
+        android:layout_gravity="right"/>
+
+    <Button
         android:id="@+id/btnTake"
         android:layout_width="match_parent"
         android:layout_height="60dp"

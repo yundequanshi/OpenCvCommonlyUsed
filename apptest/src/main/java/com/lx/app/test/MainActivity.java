@@ -18,7 +18,13 @@ public class MainActivity extends AppCompatActivity {
 
     private Button btnTake;
 
+    private Button btnFlash;
+
+    private Button btnAuto;
+
     private int delayTime = 2000;
+
+    private boolean isAuto = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ivResult = findViewById(R.id.ivResult);
         btnTake = findViewById(R.id.btnTake);
+        btnFlash = findViewById(R.id.btnFlash);
+        btnAuto = findViewById(R.id.btnAuto);
         final CameraFragment cameraFragment = new CameraFragment();
         getSupportFragmentManager().beginTransaction()
                 .add(R.id.flMain, cameraFragment).commit();
@@ -67,6 +75,27 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(final View v) {
                 cameraFragment.takeHandPhoto();
+            }
+        });
+        btnFlash.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(final View v) {
+                cameraFragment.setFlashOpenClose();
+            }
+        });
+        btnAuto.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(final View v) {
+                boolean isSuccess = cameraFragment.setScanDocument(!isAuto);
+                if (isSuccess) {
+                    if (isAuto) {
+                        isAuto = false;
+                        btnAuto.setText("自动");
+                    } else {
+                        isAuto = true;
+                        btnAuto.setText("手动");
+                    }
+                }
             }
         });
     }
