@@ -17,6 +17,8 @@ public class MainActivity extends AppCompatActivity {
 
     private Button btnTake;
 
+    private int delayTime = 2000;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         ivResult.setImageBitmap(null);
                     }
-                }, 1000);
+                }, delayTime);
             }
 
             @Override
@@ -46,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         ivResult.setImageBitmap(null);
                     }
-                }, 1000);
+                }, delayTime);
             }
         });
         btnTake.setOnClickListener(new OnClickListener() {

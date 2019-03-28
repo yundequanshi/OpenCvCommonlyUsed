@@ -24,6 +24,7 @@ import android.hardware.Camera.Parameters;
 import android.media.ExifInterface;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Message;
 import android.support.v4.widget.ContentLoadingProgressBar;
 import android.util.Log;
 import android.view.Display;
@@ -113,6 +114,32 @@ public class CameraSurfacePreview extends SurfaceView
     private String currentFocusMode = null;
 
     private boolean isPreviewTakePhoto = false;
+
+    private int delayTime = 4000;
+
+    private int delayWhat = 4000;
+
+    private int delayAutoTime = 10000;
+
+    private int delayAutoWhat = 10000;
+
+    @SuppressLint("HandlerLeak")
+    private Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.what == delayWhat) {
+                isHandTake = true;
+                processFrame = true;
+            }
+            if (msg.what == delayAutoWhat) {
+                isHandTake = false;
+                mHandler.removeMessages(delayWhat);
+                if (!isPreviewTakePhoto) {
+                    takePhoto();
+                }
+            }
+        }
+    };
 
     public CameraSurfacePreview(final Context context, ImageView canvasFrame, View focusMarker,
             ContentLoadingProgressBar mProgressBar) {
@@ -220,12 +247,8 @@ public class CameraSurfacePreview extends SurfaceView
             mCamera.startPreview();
             mCamera.setPreviewCallback(this);
             isHandTake = true;
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    processFrame = true;
-                }
-            }, 2000);
+            mHandler.sendEmptyMessageDelayed(delayWhat, delayTime);
+            mHandler.sendEmptyMessageDelayed(delayAutoWhat, delayAutoTime);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -280,6 +303,7 @@ public class CameraSurfacePreview extends SurfaceView
         sheetXCoords[3] = arr[6];
         sheetYCoords[3] = arr[7];
         isPreviewTakePhoto = true;
+        mHandler.removeMessages(delayAutoWhat);
         takePhoto();
     }
 
@@ -305,6 +329,8 @@ public class CameraSurfacePreview extends SurfaceView
      */
     public void takeHandPhoto() {
         isHandTake = false;
+        mHandler.removeMessages(delayWhat);
+        mHandler.removeMessages(delayAutoWhat);
         if (!isPreviewTakePhoto) {
             takePhoto();
         }
@@ -612,13 +638,9 @@ public class CameraSurfacePreview extends SurfaceView
                                 mPreviewCallback.onTakeBitmapCallback(bitmap);
                             }
                         }
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                isHandTake = true;
-                                processFrame = true;
-                            }
-                        }, 2000);
+                        isPreviewTakePhoto = false;
+                        mHandler.sendEmptyMessageDelayed(delayWhat, delayTime);
+                        mHandler.sendEmptyMessageDelayed(delayAutoWhat, delayAutoTime);
                         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
                         mLinePath.reset();
                         mProgressBar.setVisibility(GONE);
