@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">cameraLX</string>
+    <string name="string_camera_loading_tips">摄像头加载中...</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

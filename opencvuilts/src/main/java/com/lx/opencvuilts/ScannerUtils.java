@@ -40,18 +40,18 @@ public class ScannerUtils {
             return resultArr;
         }
         MatOfPoint maxMatOfPoint = contours.get(0);
-        double firstArea = Math.abs(Imgproc.contourArea(maxMatOfPoint));
+        double maxArea = Math.abs(Imgproc.contourArea(maxMatOfPoint));
         int num = contours.size() - 1;
         while (num > 0) {
             double area = Math.abs(Imgproc.contourArea(contours.get(num)));
-            if (area > firstArea) {
+            if (area > maxArea) {
                 maxMatOfPoint = contours.get(num);
-                firstArea = area;
+                maxArea = area;
             }
             num--;
         }
 
-        Log.d("最大面积",firstArea+"");
+        Log.d("最大面积", maxArea + "");
 
         MatOfPoint2f maxMatOfPoint2f = new MatOfPoint2f(maxMatOfPoint.toArray());
         double arc = Imgproc.arcLength(maxMatOfPoint2f, true);
@@ -59,9 +59,9 @@ public class ScannerUtils {
         Imgproc.approxPolyDP(maxMatOfPoint2f, outDpMat, 0.02 * arc, true);//  多边形逼近
         //  筛选去除相近的点
         MatOfPoint2f selectMat = selectPoint(outDpMat, 1);
-        Log.d("点数",outDpMat.toArray().length+"");
-        if (outDpMat.toArray().length == 4) {
-            resultArr = outDpMat.toArray();
+        Log.d("点数", selectMat.toArray().length + "");
+        if (selectMat.toArray().length == 4) {
+            resultArr = selectMat.toArray();
         }
         //  对最终检测出的四个点进行排序：左上、右上、右下、左下
         if (resultArr != null) {
