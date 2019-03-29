@@ -359,11 +359,13 @@ public class CameraSurfacePreview extends SurfaceView
         boolean isSuccess = true;
         if (isScan) {
             this.isScan = isScan;
+            currentFocusMode = null;
             mHandler.sendEmptyMessageDelayed(delayWhat, delayTime);
             mHandler.sendEmptyMessageDelayed(delayAutoWhat, delayAutoTime);
         } else {
             if (isPreviewTakePhoto) {
                 this.isScan = true;
+                currentFocusMode = null;
                 isSuccess = false;
             } else {
                 this.isScan = isScan;
@@ -407,82 +409,6 @@ public class CameraSurfacePreview extends SurfaceView
             camera.setParameters(mParameters);
             currentFocusMode = null;
         }
-    }
-
-    @Override
-    public boolean onTouchEvent(final MotionEvent event) {
-        if (event.getPointerCount() == 1) {
-            try {
-                if (!isPreviewTakePhoto) {
-                    handleFocus(event);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return super.onTouchEvent(event);
-    }
-
-    /**
-     * 触摸聚焦
-     */
-    private void handleFocus(MotionEvent event) {
-        if (mCamera == null) {
-            return;
-        }
-        if (mParameters == null) {
-            return;
-        }
-        int viewWidth = getWidth();
-        int viewHeight = getHeight();
-        int dp25 = ViewUtils.dp2px(25);
-        focusMarker.setX(event.getX() - dp25);
-        focusMarker.setY(event.getY() - dp25);
-        focusMarker.setVisibility(VISIBLE);
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                focusMarker.setVisibility(GONE);
-            }
-        }, 500);
-        Rect focusRect = calculateTapArea(event.getX(), event.getY(), 1f, viewWidth, viewHeight);
-        mCamera.cancelAutoFocus();
-        if (mParameters.getMaxNumFocusAreas() > 0) {
-            List<Camera.Area> focusAreas = new ArrayList<>();
-            focusAreas.add(new Camera.Area(focusRect, 800));
-            mParameters.setFocusAreas(focusAreas);
-        } else {
-            Log.i(TAG, "focus areas not supported");
-        }
-        currentFocusMode = mParameters.getFocusMode();
-        mParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
-        mCamera.setParameters(mParameters);
-        mCamera.autoFocus(this);
-    }
-
-    private Rect calculateTapArea(float x, float y, float coefficient, int width, int height) {
-        float focusAreaSize = 300;
-        int areaSize = Float.valueOf(focusAreaSize * coefficient).intValue();
-        int centerX = (int) (x / width * 2000 - 1000);
-        int centerY = (int) (y / height * 2000 - 1000);
-
-        int halfAreaSize = areaSize / 2;
-        RectF rectF = new RectF(clamp(centerX - halfAreaSize, -1000, 1000)
-                , clamp(centerY - halfAreaSize, -1000, 1000)
-                , clamp(centerX + halfAreaSize, -1000, 1000)
-                , clamp(centerY + halfAreaSize, -1000, 1000));
-        return new Rect(Math.round(rectF.left), Math.round(rectF.top), Math.round(rectF.right),
-                Math.round(rectF.bottom));
-    }
-
-    private int clamp(int x, int min, int max) {
-        if (x > max) {
-            return max;
-        }
-        if (x < min) {
-            return min;
-        }
-        return x;
     }
 
     @Override
@@ -640,9 +566,9 @@ public class CameraSurfacePreview extends SurfaceView
                     }
                     Mat source = new Mat();
                     Utils.bitmapToMat(picture, source);
-                    Imgproc.cvtColor(source, source, Imgproc.COLOR_BGR2RGB);
+//                    Imgproc.cvtColor(source, source, Imgproc.COLOR_BGR2RGB);
                     Mat resultImg = AffineTransformator.iso216ratioTransform(source, sheetCoords);
-                    EffectiveMagician.realMagic(resultImg.getNativeObjAddr());
+//                    EffectiveMagician.realMagic(resultImg.getNativeObjAddr());
                     Bitmap bitmapResult = Bitmap
                             .createBitmap(resultImg.cols(), resultImg.rows(), Bitmap.Config.ARGB_8888);
                     Utils.matToBitmap(resultImg, bitmapResult);
@@ -677,8 +603,8 @@ public class CameraSurfacePreview extends SurfaceView
                         } else {
                             isHandTake = true;
                         }
-                        mProgressBar.setVisibility(GONE);
                         mCamera.startPreview();
+                        mProgressBar.setVisibility(GONE);
                     }
 
                     @Override
@@ -691,6 +617,89 @@ public class CameraSurfacePreview extends SurfaceView
 
                     }
                 });
+    }
+
+    @Override
+    public boolean onTouchEvent(final MotionEvent event) {
+        if (event.getPointerCount() == 1) {
+            try {
+                if (!isPreviewTakePhoto) {
+                    if (setUpFocus()) {
+                        mCamera.autoFocus(this);
+                    } else {
+                        handleFocus(event);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return super.onTouchEvent(event);
+    }
+
+    /**
+     * 触摸聚焦
+     */
+    private void handleFocus(MotionEvent event) {
+        try {
+            if (mCamera == null) {
+                return;
+            }
+            Parameters parameters = mCamera.getParameters();
+            int viewWidth = getWidth();
+            int viewHeight = getHeight();
+            int dp25 = ViewUtils.dp2px(25);
+            focusMarker.setX(event.getX() - dp25);
+            focusMarker.setY(event.getY() - dp25);
+            focusMarker.setVisibility(VISIBLE);
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    focusMarker.setVisibility(GONE);
+                }
+            }, 500);
+            currentFocusMode = parameters.getFocusMode();
+            List<String> focusModes = parameters.getSupportedFocusModes();
+            if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                Rect focusRect = calculateTapArea(event.getX(), event.getY(), 1f, viewWidth, viewHeight);
+                Camera.Area area = new Camera.Area(focusRect, 1000);
+                if (parameters.getMaxNumFocusAreas() > 0) {
+                    parameters.setFocusAreas(Collections.singletonList(area));
+                }
+                if (parameters.getMaxNumMeteringAreas() > 0) {
+                    parameters.setMeteringAreas(Collections.singletonList(area));
+                }
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+            }
+            mCamera.setParameters(parameters);
+        } catch (Exception e) {
+        }
+        mCamera.autoFocus(this);
+    }
+
+    private Rect calculateTapArea(float x, float y, float coefficient, int width, int height) {
+        float focusAreaSize = 300;
+        int areaSize = Float.valueOf(focusAreaSize * coefficient).intValue();
+        int centerX = (int) (x / width * 2000 - 1000);
+        int centerY = (int) (y / height * 2000 - 1000);
+
+        int halfAreaSize = areaSize / 2;
+        RectF rectF = new RectF(clamp(centerX - halfAreaSize, -1000, 1000)
+                , clamp(centerY - halfAreaSize, -1000, 1000)
+                , clamp(centerX + halfAreaSize, -1000, 1000)
+                , clamp(centerY + halfAreaSize, -1000, 1000));
+        return new Rect(Math.round(rectF.left), Math.round(rectF.top), Math.round(rectF.right),
+                Math.round(rectF.bottom));
+    }
+
+    private int clamp(int x, int min, int max) {
+        if (x > max) {
+            return max;
+        }
+        if (x < min) {
+            return min;
+        }
+        return x;
     }
 
     /**

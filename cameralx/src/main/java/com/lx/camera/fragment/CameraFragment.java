@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -28,6 +29,9 @@ import pub.devrel.easypermissions.EasyPermissions;
 
 public class CameraFragment extends Fragment {
 
+    /**
+     * 下一步处理角度问题/文档大小问题
+     */
 
     private static final int RC_CAMERA_PERM = 123;
 
@@ -89,9 +93,14 @@ public class CameraFragment extends Fragment {
     public void onPause() {
         super.onPause();
         if (surfacePreview != null) {
-            surfacePreview.releaseCameraAndPreview();
-            surfacePreview = null;
-            preview.removeAllViews();
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    surfacePreview.releaseCameraAndPreview();
+                    surfacePreview = null;
+                    preview.removeAllViews();
+                }
+            }, 800);
         }
     }
 
@@ -204,6 +213,9 @@ public class CameraFragment extends Fragment {
      * 闪光灯开关（默认是关）
      */
     public void setFlashOpenClose() {
+        if (mProgressBar.getVisibility() == View.VISIBLE) {
+            return;
+        }
         if (surfacePreview != null) {
             surfacePreview.setFlashOpenClose();
         }
@@ -213,6 +225,9 @@ public class CameraFragment extends Fragment {
      * 是否自动扫描文档
      */
     public boolean setScanDocument(boolean isHandTake) {
+        if (mProgressBar.getVisibility() == View.VISIBLE) {
+            return false;
+        }
         if (surfacePreview != null) {
             return surfacePreview.setScanDocument(isHandTake);
         }
@@ -223,6 +238,9 @@ public class CameraFragment extends Fragment {
      * 手动拍照
      */
     public void takeHandPhoto() {
+        if (mProgressBar.getVisibility() == View.VISIBLE) {
+            return;
+        }
         if (surfacePreview != null) {
             surfacePreview.takeHandPhoto();
         }
