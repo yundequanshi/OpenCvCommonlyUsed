@@ -8,6 +8,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import com.lx.camera.entiy.PreviewAndTakeStringCallback;
 import com.lx.camera.fragment.CameraFragment;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -18,6 +19,8 @@ public class MainActivity extends AppCompatActivity {
     private Button btnAuto;
 
     private boolean isAuto = true;
+
+    private ArrayList<View> rotateViews = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +76,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        rotateViews.add(btnTake);
+        rotateViews.add(btnFlash);
+        rotateViews.add(btnAuto);
+        cameraFragment.setRotateViews(this,rotateViews);
     }
 
     @Override

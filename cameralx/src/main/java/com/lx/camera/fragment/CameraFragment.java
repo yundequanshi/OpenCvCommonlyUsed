@@ -2,6 +2,7 @@ package com.lx.camera.fragment;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,11 +13,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 import com.lx.camera.R;
 import com.lx.camera.entiy.PreviewAndTakeBitmapCallback;
 import com.lx.camera.entiy.PreviewAndTakeStringCallback;
 import com.lx.camera.preview.CameraSurfacePreview;
 import com.lx.camera.utils.GallerySaveExpert;
+import com.lx.camera.utils.RotateSensorUtil;
+import com.lx.camera.utils.RotateSensorUtil.RotateCallBack;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
@@ -24,6 +28,7 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+import java.util.ArrayList;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
@@ -51,9 +56,13 @@ public class CameraFragment extends Fragment {
 
     private View focusMarker;
 
+    private TextView tvRotateTips;
+
     private PreviewAndTakeBitmapCallback mCallback = null;
 
     private PreviewAndTakeStringCallback mStringCallback;
+
+    private RotateSensorUtil sensorUtil;
 
     public CameraFragment() {
     }
@@ -76,6 +85,7 @@ public class CameraFragment extends Fragment {
         preview = mView.findViewById(R.id.camera_preview);
         mProgressBar = mView.findViewById(R.id.flProgressBar);
         focusMarker = mView.findViewById(R.id.focus_marker);
+        tvRotateTips = mView.findViewById(R.id.tvRotateTips);
     }
 
     @Override
@@ -246,10 +256,34 @@ public class CameraFragment extends Fragment {
         }
     }
 
+    /**
+     * 设置旋转的view
+     */
+    public void setRotateViews(Context context, final ArrayList<View> rotateViews) {
+        sensorUtil = new RotateSensorUtil(context, rotateViews, new RotateCallBack() {
+            @Override
+            public void onRotateCallBack(final boolean isShow) {
+                if (isShow) {
+                    if (tvRotateTips.getVisibility() == View.GONE) {
+                        tvRotateTips.setVisibility(View.VISIBLE);
+                    }
+                } else {
+                    tvRotateTips.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+
     @Override
     public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions,
             @NonNull final int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        sensorUtil.unregisterSensor();
     }
 }

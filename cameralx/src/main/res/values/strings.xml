@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">cameraLX</string>
     <string name="string_camera_loading_tips">摄像头加载中...</string>
+    <string name="string_camera_rotate_tips">请与文档平行</string>
 </resources>
