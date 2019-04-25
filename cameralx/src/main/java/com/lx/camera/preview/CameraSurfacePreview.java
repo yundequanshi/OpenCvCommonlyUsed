@@ -28,7 +28,6 @@ import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -37,11 +36,11 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 import com.lx.camera.R;
 import com.lx.camera.entiy.PreviewAndTakeBitmapCallback;
 import com.lx.camera.utils.AffineTransformator;
 import com.lx.camera.utils.BestPreviewSizeTool;
-import com.lx.camera.utils.EffectiveMagician;
 import com.lx.camera.utils.ExcelentRotator;
 import com.lx.camera.utils.ViewUtils;
 import io.reactivex.Observable;
@@ -53,14 +52,12 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
 
 public class CameraSurfacePreview extends SurfaceView
         implements SurfaceHolder.Callback, Camera.PreviewCallback, Camera.PictureCallback, AutoFocusCallback {
@@ -119,6 +116,8 @@ public class CameraSurfacePreview extends SurfaceView
     private boolean isPreviewTakePhoto = false;
 
     private int delayTime = 4000;
+
+    private int delayTipsTime = 2000;
 
     private int delayWhat = 4000;
 
@@ -292,7 +291,18 @@ public class CameraSurfacePreview extends SurfaceView
         int width = (int) (Math.abs((wScale * arr[0])) - (wScale * arr[2]));
         int height = (int) (Math.abs((hScale * arr[5])) - (hScale * arr[3]));
         if (width > 1000 || height > 1000) {
-            processFrame = true;
+            mHandler.sendEmptyMessageDelayed(delayWhat, delayTipsTime);
+            return;
+        }
+        int widthHalf = ViewUtils.getScreenWidth(getContext()) / 2;
+        int heightHalf = ViewUtils.getScreenWidth(getContext()) / 2;
+        double point1 = Math.abs(wScale * arr[6] - wScale * arr[0]);
+        double point2 = Math.abs(wScale * arr[4] - wScale * arr[2]);
+        double point3 = Math.abs(hScale * arr[7] - hScale * arr[5]);
+        double point4 = Math.abs(hScale * arr[3] - hScale * arr[1]);
+        if (point1 < widthHalf || point2 < widthHalf || point3 < widthHalf || point4 < widthHalf) {
+            Toast.makeText(getContext(), getContext().getString(R.string.string_preview_tips_distance), Toast.LENGTH_SHORT).show();
+            mHandler.sendEmptyMessageDelayed(delayWhat, delayTipsTime);
             return;
         }
         mLinePath.moveTo((int) (wScale * arr[0]), (int) (hScale * arr[1]));

@@ -30,6 +30,8 @@ public class RotateSensorUtil implements SensorEventListener {
     //角度提示
     private RotateCallBack callBack;
 
+    private int angleRotate = 3;
+
     public RotateSensorUtil(Context context, ArrayList<View> views, RotateCallBack callBack) {
 
         this.context = context;
@@ -52,7 +54,7 @@ public class RotateSensorUtil implements SensorEventListener {
         float ay = values[1];
         float az = values[2];
 
-        if (Math.abs(ax) > 5 || Math.abs(ay) > 5) {
+        if (Math.abs(ax) > angleRotate || Math.abs(ay) > angleRotate) {
             callBack.onRotateCallBack(true);
         } else {
             callBack.onRotateCallBack(false);
@@ -139,7 +141,8 @@ public class RotateSensorUtil implements SensorEventListener {
     }
 
 
-    public interface RotateCallBack{
-       void onRotateCallBack(boolean isShow);
+    public interface RotateCallBack {
+
+        void onRotateCallBack(boolean isShow);
     }
 }
