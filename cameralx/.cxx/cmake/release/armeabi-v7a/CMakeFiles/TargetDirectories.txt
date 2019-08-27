@@ -1,4 +1,0 @@
-E:/AndroidProject/OpenCvCommonlyUsed/cameralx/.cxx/cmake/release/armeabi-v7a/CMakeFiles/native-lib.dir
-E:/AndroidProject/OpenCvCommonlyUsed/cameralx/.cxx/cmake/release/armeabi-v7a/CMakeFiles/magic-lib.dir
-E:/AndroidProject/OpenCvCommonlyUsed/cameralx/.cxx/cmake/release/armeabi-v7a/CMakeFiles/edit_cache.dir
-E:/AndroidProject/OpenCvCommonlyUsed/cameralx/.cxx/cmake/release/armeabi-v7a/CMakeFiles/rebuild_cache.dir

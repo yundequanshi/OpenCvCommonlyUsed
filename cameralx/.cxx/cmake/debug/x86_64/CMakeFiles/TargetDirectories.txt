@@ -1,4 +1,0 @@
-E:/AndroidProject/OpenCvCommonlyUsed/cameralx/.cxx/cmake/debug/x86_64/CMakeFiles/native-lib.dir
-E:/AndroidProject/OpenCvCommonlyUsed/cameralx/.cxx/cmake/debug/x86_64/CMakeFiles/magic-lib.dir
-E:/AndroidProject/OpenCvCommonlyUsed/cameralx/.cxx/cmake/debug/x86_64/CMakeFiles/edit_cache.dir
-E:/AndroidProject/OpenCvCommonlyUsed/cameralx/.cxx/cmake/debug/x86_64/CMakeFiles/rebuild_cache.dir
