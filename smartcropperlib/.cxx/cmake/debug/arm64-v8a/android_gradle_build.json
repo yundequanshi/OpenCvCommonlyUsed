@@ -1,0 +1,74 @@
+
+{
+	"buildFiles" : [ "E:/AndroidProject/OpenCvCommonlyUsed/smartcropperlib/CMakeLists.txt" ],
+	"cleanCommands" : 
+	[
+		"D:\\Android\\Sdk\\cmake\\3.6.4111459\\bin\\cmake.exe --build E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\debug\\arm64-v8a --target clean"
+	],
+	"cppFileExtensions" : [ "cpp" ],
+	"libraries" : 
+	{
+		"opencv_core-Debug-arm64-v8a" : 
+		{
+			"abi" : "arm64-v8a",
+			"artifactName" : "opencv_core",
+			"buildType" : "debug",
+			"output" : "E:/AndroidProject/OpenCvCommonlyUsed/smartcropperlib/opencv/lib/arm64-v8a/libopencv_core.a",
+			"toolchain" : "1777121017"
+		},
+		"opencv_imgproc-Debug-arm64-v8a" : 
+		{
+			"abi" : "arm64-v8a",
+			"artifactName" : "opencv_imgproc",
+			"buildType" : "debug",
+			"output" : "E:/AndroidProject/OpenCvCommonlyUsed/smartcropperlib/opencv/lib/arm64-v8a/libopencv_imgproc.a",
+			"toolchain" : "1777121017"
+		},
+		"smart_cropper-Debug-arm64-v8a" : 
+		{
+			"abi" : "arm64-v8a",
+			"artifactName" : "smart_cropper",
+			"buildCommand" : "D:\\Android\\Sdk\\cmake\\3.6.4111459\\bin\\cmake.exe --build E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\debug\\arm64-v8a --target smart_cropper",
+			"buildType" : "debug",
+			"files" : 
+			[
+				
+				{
+					"flags" : "  --target=aarch64-none-linux-android --gcc-toolchain=D:/Android/android-ndk-r17c/toolchains/aarch64-linux-android-4.9/prebuilt/windows-x86_64 --sysroot=D:/Android/android-ndk-r17c/sysroot  -Dsmart_cropper_EXPORTS -I..\\..\\..\\..\\opencv\\include -I..\\..\\..\\..\\src\\main\\cpp\\include -isystem D:\\Android\\android-ndk-r17c\\sources\\cxx-stl\\gnu-libstdc++\\4.9\\include -isystem D:\\Android\\android-ndk-r17c\\sources\\cxx-stl\\gnu-libstdc++\\4.9\\libs\\arm64-v8a\\include -isystem D:\\Android\\android-ndk-r17c\\sources\\cxx-stl\\gnu-libstdc++\\4.9\\include\\backward  -isystem D:/Android/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security  -std=c++11 -frtti -fexceptions -lz -O0 -fno-limit-debug-info  -fPIC    -c ",
+					"src" : "E:/AndroidProject/OpenCvCommonlyUsed/smartcropperlib/src/main/cpp/Scanner.cpp",
+					"workingDirectory" : "E:/AndroidProject/OpenCvCommonlyUsed/smartcropperlib/.cxx/cmake/debug/arm64-v8a"
+				},
+				
+				{
+					"flags" : "  --target=aarch64-none-linux-android --gcc-toolchain=D:/Android/android-ndk-r17c/toolchains/aarch64-linux-android-4.9/prebuilt/windows-x86_64 --sysroot=D:/Android/android-ndk-r17c/sysroot  -Dsmart_cropper_EXPORTS -I..\\..\\..\\..\\opencv\\include -I..\\..\\..\\..\\src\\main\\cpp\\include -isystem D:\\Android\\android-ndk-r17c\\sources\\cxx-stl\\gnu-libstdc++\\4.9\\include -isystem D:\\Android\\android-ndk-r17c\\sources\\cxx-stl\\gnu-libstdc++\\4.9\\libs\\arm64-v8a\\include -isystem D:\\Android\\android-ndk-r17c\\sources\\cxx-stl\\gnu-libstdc++\\4.9\\include\\backward  -isystem D:/Android/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security  -std=c++11 -frtti -fexceptions -lz -O0 -fno-limit-debug-info  -fPIC    -c ",
+					"src" : "E:/AndroidProject/OpenCvCommonlyUsed/smartcropperlib/src/main/cpp/smart_cropper.cpp",
+					"workingDirectory" : "E:/AndroidProject/OpenCvCommonlyUsed/smartcropperlib/.cxx/cmake/debug/arm64-v8a"
+				},
+				
+				{
+					"flags" : "  --target=aarch64-none-linux-android --gcc-toolchain=D:/Android/android-ndk-r17c/toolchains/aarch64-linux-android-4.9/prebuilt/windows-x86_64 --sysroot=D:/Android/android-ndk-r17c/sysroot  -Dsmart_cropper_EXPORTS -I..\\..\\..\\..\\opencv\\include -I..\\..\\..\\..\\src\\main\\cpp\\include -isystem D:\\Android\\android-ndk-r17c\\sources\\cxx-stl\\gnu-libstdc++\\4.9\\include -isystem D:\\Android\\android-ndk-r17c\\sources\\cxx-stl\\gnu-libstdc++\\4.9\\libs\\arm64-v8a\\include -isystem D:\\Android\\android-ndk-r17c\\sources\\cxx-stl\\gnu-libstdc++\\4.9\\include\\backward  -isystem D:/Android/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security  -std=c++11 -frtti -fexceptions -lz -O0 -fno-limit-debug-info  -fPIC    -c ",
+					"src" : "E:/AndroidProject/OpenCvCommonlyUsed/smartcropperlib/src/main/cpp/android_utils.cpp",
+					"workingDirectory" : "E:/AndroidProject/OpenCvCommonlyUsed/smartcropperlib/.cxx/cmake/debug/arm64-v8a"
+				}
+			],
+			"output" : "E:/AndroidProject/OpenCvCommonlyUsed/smartcropperlib/build/intermediates/cmake/debug/obj/arm64-v8a/libsmart_cropper.so",
+			"toolchain" : "1777121017"
+		},
+		"tbb-Debug-arm64-v8a" : 
+		{
+			"abi" : "arm64-v8a",
+			"artifactName" : "tbb",
+			"buildType" : "debug",
+			"output" : "E:/AndroidProject/OpenCvCommonlyUsed/smartcropperlib/opencv/lib/arm64-v8a/libtbb.a",
+			"toolchain" : "1777121017"
+		}
+	},
+	"toolchains" : 
+	{
+		"1777121017" : 
+		{
+			"cCompilerExecutable" : "D:/Android/android-ndk-r17c/toolchains/llvm/prebuilt/windows-x86_64/bin/clang.exe",
+			"cppCompilerExecutable" : "D:/Android/android-ndk-r17c/toolchains/llvm/prebuilt/windows-x86_64/bin/clang++.exe"
+		}
+	}
+}

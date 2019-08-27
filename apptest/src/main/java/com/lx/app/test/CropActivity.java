@@ -16,6 +16,7 @@ import android.widget.ImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
+import me.pqpo.smartcropperlib.SmartCropper;
 import me.pqpo.smartcropperlib.view.CropImageView;
 
 public class CropActivity extends AppCompatActivity {
@@ -36,6 +37,7 @@ public class CropActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_crop);
+        SmartCropper.buildImageDetector(this);
         ivResult = findViewById(R.id.ivResult);
         btnCancel = findViewById(R.id.btnCancel);
         btnSure = findViewById(R.id.btnSure);

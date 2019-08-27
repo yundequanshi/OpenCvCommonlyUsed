@@ -1,0 +1,27 @@
+{
+  "buildFiles": [
+    "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\CMakeLists.txt"
+  ],
+  "cleanCommands": [
+    "D:\\Android\\Sdk\\cmake\\3.6.4111459\\bin\\cmake.exe --build E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\.cxx\\cmake\\debug\\x86_64 --target clean"
+  ],
+  "libraries": {
+    "native-lib-Debug-x86_64": {
+      "artifactName": "native-lib",
+      "buildCommand": "D:\\Android\\Sdk\\cmake\\3.6.4111459\\bin\\cmake.exe --build E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\.cxx\\cmake\\debug\\x86_64 --target native-lib",
+      "abi": "x86_64",
+      "output": "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\build\\intermediates\\cmake\\debug\\obj\\x86_64\\libnative-lib.so"
+    },
+    "lib_opencv-Debug-x86_64": {
+      "artifactName": "lib_opencv",
+      "abi": "x86_64",
+      "output": "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\src\\main\\jniLibs\\x86_64\\libopencv_java3.so"
+    },
+    "magic-lib-Debug-x86_64": {
+      "artifactName": "magic-lib",
+      "buildCommand": "D:\\Android\\Sdk\\cmake\\3.6.4111459\\bin\\cmake.exe --build E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\.cxx\\cmake\\debug\\x86_64 --target magic-lib",
+      "abi": "x86_64",
+      "output": "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\build\\intermediates\\cmake\\debug\\obj\\x86_64\\libmagic-lib.so"
+    }
+  }
+}

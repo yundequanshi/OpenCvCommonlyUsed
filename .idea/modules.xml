@@ -9,7 +9,6 @@
       <module fileurl="file://$PROJECT_DIR$/cameraview/cameraview.iml" filepath="$PROJECT_DIR$/cameraview/cameraview.iml" />
       <module fileurl="file://$PROJECT_DIR$/opencvlib345/opencvlib345.iml" filepath="$PROJECT_DIR$/opencvlib345/opencvlib345.iml" />
       <module fileurl="file://$PROJECT_DIR$/opencvuilts/opencvuilts.iml" filepath="$PROJECT_DIR$/opencvuilts/opencvuilts.iml" />
-      <module fileurl="file://$PROJECT_DIR$/smartcropperlib/smartcropperlib.iml" filepath="$PROJECT_DIR$/smartcropperlib/smartcropperlib.iml" />
     </modules>
   </component>
 </project>

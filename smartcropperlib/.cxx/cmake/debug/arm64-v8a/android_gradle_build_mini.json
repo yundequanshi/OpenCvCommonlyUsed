@@ -1,0 +1,31 @@
+{
+  "buildFiles": [
+    "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\CMakeLists.txt"
+  ],
+  "cleanCommands": [
+    "D:\\Android\\Sdk\\cmake\\3.6.4111459\\bin\\cmake.exe --build E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\debug\\arm64-v8a --target clean"
+  ],
+  "libraries": {
+    "tbb-Debug-arm64-v8a": {
+      "artifactName": "tbb",
+      "abi": "arm64-v8a",
+      "output": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\opencv\\lib\\arm64-v8a\\libtbb.a"
+    },
+    "smart_cropper-Debug-arm64-v8a": {
+      "artifactName": "smart_cropper",
+      "buildCommand": "D:\\Android\\Sdk\\cmake\\3.6.4111459\\bin\\cmake.exe --build E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\debug\\arm64-v8a --target smart_cropper",
+      "abi": "arm64-v8a",
+      "output": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a\\libsmart_cropper.so"
+    },
+    "opencv_core-Debug-arm64-v8a": {
+      "artifactName": "opencv_core",
+      "abi": "arm64-v8a",
+      "output": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\opencv\\lib\\arm64-v8a\\libopencv_core.a"
+    },
+    "opencv_imgproc-Debug-arm64-v8a": {
+      "artifactName": "opencv_imgproc",
+      "abi": "arm64-v8a",
+      "output": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\opencv\\lib\\arm64-v8a\\libopencv_imgproc.a"
+    }
+  }
+}

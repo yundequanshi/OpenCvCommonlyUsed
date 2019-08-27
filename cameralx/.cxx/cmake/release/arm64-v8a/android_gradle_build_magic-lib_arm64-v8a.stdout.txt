@@ -1,0 +1,2 @@
+[1/2] Building CXX object CMakeFiles/magic-lib.dir/src/main/cpp/magic-lib.cpp.o
+[2/2] Linking CXX shared library ..\..\..\..\build\intermediates\cmake\release\obj\arm64-v8a\libmagic-lib.so

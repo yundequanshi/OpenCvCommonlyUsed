@@ -1,0 +1,73 @@
+{
+  "variant": {
+    "module": {
+      "rootBuildGradleFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed",
+      "sdkFolder": "D:\\Android\\Sdk",
+      "isNativeCompilerSettingsCacheEnabled": false,
+      "isBuildOnlyTargetAbiEnabled": true,
+      "splitsAbiFilterSet": [],
+      "intermediatesFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\build\\intermediates",
+      "gradleModulePathName": ":smartcropperlib",
+      "moduleRootFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib",
+      "makeFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\CMakeLists.txt",
+      "buildSystem": "CMAKE",
+      "compilerSettingsCacheFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\.cxx",
+      "cxxFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx",
+      "ndkFolder": "D:\\Android\\android-ndk-r17c",
+      "ndkVersion": "17.2.4988734",
+      "ndkSupportedAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "ndkDefaultAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "cmakeToolchainFile": "."
+    },
+    "buildSystemArgumentList": [
+      "-DANDROID_STL\u003dgnustl_shared"
+    ],
+    "cFlagList": [],
+    "cppFlagsList": [
+      "-std\u003dc++11 -frtti -fexceptions -lz"
+    ],
+    "variantName": "release",
+    "soFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\build\\intermediates\\cmake\\release\\lib",
+    "objFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\build\\intermediates\\cmake\\release\\obj",
+    "jsonFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\release",
+    "gradleBuildOutputFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cxx\\release",
+    "isDebuggableEnabled": false,
+    "validAbiList": [
+      "ARMEABI_V7A",
+      "ARM64_V8A",
+      "X86"
+    ],
+    "buildTargetSet": []
+  },
+  "abi": "X86",
+  "abiPlatformVersion": 14,
+  "cxxBuildFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\release\\x86",
+  "jsonFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\release\\x86\\android_gradle_build.json",
+  "gradleBuildOutputFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cxx\\release\\x86",
+  "objFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\build\\intermediates\\cmake\\release\\obj\\x86",
+  "buildCommandFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\release\\x86\\build_command.txt",
+  "buildOutputFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\release\\x86\\build_output.txt",
+  "modelOutputFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\release\\x86\\build_model.json",
+  "cmake": {
+    "cmakeListsWrapperFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cxx\\release\\x86\\CMakeLists.txt",
+    "toolchainWrapperFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cxx\\release\\x86\\android_gradle_build.toolchain.cmake",
+    "buildGenerationStateFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cxx\\release\\x86\\build_generation_state.json",
+    "cacheKeyFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cxx\\release\\x86\\compiler_cache_key.json",
+    "compilerCacheUseFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cxx\\release\\x86\\compiler_cache_use.json",
+    "compilerCacheWriteFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cxx\\release\\x86\\compiler_cache_write.json",
+    "toolchainSettingsFromCacheFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cxx\\release\\x86\\compiler_settings_cache.cmake",
+    "cmakeWrappingBaseFolder": "."
+  },
+  "jsonGenerationLoggingRecordFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\release\\x86\\json_generation_record.json",
+  "compileCommandsJsonFile": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\release\\x86\\compile_commands.json"
+}

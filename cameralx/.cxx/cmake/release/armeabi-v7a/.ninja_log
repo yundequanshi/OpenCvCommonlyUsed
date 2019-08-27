@@ -1,0 +1,5 @@
+# ninja log v5
+1	1387	0	CMakeFiles/magic-lib.dir/src/main/cpp/magic-lib.cpp.o	cceb3b83e3593f31
+1389	1641	0	../../../../build/intermediates/cmake/release/obj/armeabi-v7a/libmagic-lib.so	e8f11ad836248a00
+31	1387	0	CMakeFiles/native-lib.dir/src/main/cpp/native-lib.cpp.o	4076c21f93ff6637
+1387	1530	0	../../../../build/intermediates/cmake/release/obj/armeabi-v7a/libnative-lib.so	88a8abf26d8b49b8

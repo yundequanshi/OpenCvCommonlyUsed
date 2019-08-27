@@ -1,0 +1,31 @@
+{
+  "buildFiles": [
+    "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\CMakeLists.txt"
+  ],
+  "cleanCommands": [
+    "D:\\Android\\Sdk\\cmake\\3.6.4111459\\bin\\cmake.exe --build E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\release\\x86 --target clean"
+  ],
+  "libraries": {
+    "tbb-Release-x86": {
+      "artifactName": "tbb",
+      "abi": "x86",
+      "output": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\opencv\\lib\\x86\\libtbb.a"
+    },
+    "opencv_imgproc-Release-x86": {
+      "artifactName": "opencv_imgproc",
+      "abi": "x86",
+      "output": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\opencv\\lib\\x86\\libopencv_imgproc.a"
+    },
+    "opencv_core-Release-x86": {
+      "artifactName": "opencv_core",
+      "abi": "x86",
+      "output": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\opencv\\lib\\x86\\libopencv_core.a"
+    },
+    "smart_cropper-Release-x86": {
+      "artifactName": "smart_cropper",
+      "buildCommand": "D:\\Android\\Sdk\\cmake\\3.6.4111459\\bin\\cmake.exe --build E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\.cxx\\cmake\\release\\x86 --target smart_cropper",
+      "abi": "x86",
+      "output": "E:\\AndroidProject\\OpenCvCommonlyUsed\\smartcropperlib\\build\\intermediates\\cmake\\release\\obj\\x86\\libsmart_cropper.so"
+    }
+  }
+}

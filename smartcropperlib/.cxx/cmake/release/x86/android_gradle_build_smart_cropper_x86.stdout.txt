@@ -1,0 +1,7 @@
+[1/4] Building CXX object CMakeFiles/smart_cropper.dir/src/main/cpp/Scanner.cpp.o
+[2/4] Building CXX object CMakeFiles/smart_cropper.dir/src/main/cpp/smart_cropper.cpp.o
+[3/4] Building CXX object CMakeFiles/smart_cropper.dir/src/main/cpp/android_utils.cpp.o
+clang++.exe: warning: -lz: 'linker' input unused [-Wunused-command-line-argument]
+clang++.exe: warning: -lz: 'linker' input unused [-Wunused-command-line-argument]
+clang++.exe: warning: -lz: 'linker' input unused [-Wunused-command-line-argument]
+[4/4] Linking CXX shared library ..\..\..\..\build\intermediates\cmake\release\obj\x86\libsmart_cropper.so
