@@ -1,9 +1,0 @@
-# ninja log v5
-1	939	0	CMakeFiles/native-lib.dir/src/main/cpp/native-lib.cpp.o	5291d9ea972441
-941	1113	0	../../../../build/intermediates/cmake/debug/obj/x86_64/libnative-lib.so	7a06185618b8b5f7
-1	912	0	CMakeFiles/magic-lib.dir/src/main/cpp/magic-lib.cpp.o	e3bc7bf8048845ab
-912	1074	0	../../../../build/intermediates/cmake/debug/obj/x86_64/libmagic-lib.so	f44f699c690a874
-2	924	0	CMakeFiles/native-lib.dir/src/main/cpp/native-lib.cpp.o	5291d9ea972441
-924	1091	0	../../../../build/intermediates/cmake/debug/obj/x86_64/libnative-lib.so	7a06185618b8b5f7
-3	883	0	CMakeFiles/magic-lib.dir/src/main/cpp/magic-lib.cpp.o	e3bc7bf8048845ab
-883	1039	0	../../../../build/intermediates/cmake/debug/obj/x86_64/libmagic-lib.so	f44f699c690a874

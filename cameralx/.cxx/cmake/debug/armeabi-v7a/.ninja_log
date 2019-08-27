@@ -1,9 +1,5 @@
 # ninja log v5
-0	928	0	CMakeFiles/magic-lib.dir/src/main/cpp/magic-lib.cpp.o	4415e53099e53376
-931	1054	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libmagic-lib.so	87b2c027c44e125a
-1	967	0	CMakeFiles/native-lib.dir/src/main/cpp/native-lib.cpp.o	a7dd978760dc05a5
-967	1109	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libnative-lib.so	9339ef2126bd7d20
-3	909	0	CMakeFiles/magic-lib.dir/src/main/cpp/magic-lib.cpp.o	4415e53099e53376
-909	1050	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libmagic-lib.so	87b2c027c44e125a
-3	971	0	CMakeFiles/native-lib.dir/src/main/cpp/native-lib.cpp.o	a7dd978760dc05a5
-971	1103	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libnative-lib.so	9339ef2126bd7d20
+0	963	0	CMakeFiles/magic-lib.dir/src/main/cpp/magic-lib.cpp.o	426f80794cee7e52
+965	1161	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libmagic-lib.so	f71d404a1ec3fe45
+0	1020	0	CMakeFiles/native-lib.dir/src/main/cpp/native-lib.cpp.o	ef1131e9bdeb6ce9
+1020	1155	0	../../../../build/intermediates/cmake/debug/obj/armeabi-v7a/libnative-lib.so	50aefaaf1dc9368b

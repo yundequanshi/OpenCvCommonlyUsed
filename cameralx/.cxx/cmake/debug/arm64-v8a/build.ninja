@@ -35,7 +35,7 @@ include rules.ninja
 build CMakeFiles/native-lib.dir/src/main/cpp/native-lib.cpp.o: CXX_COMPILER__native-lib ../../../../src/main/cpp/native-lib.cpp
   DEFINES = -Dnative_lib_EXPORTS
   DEP_FILE = CMakeFiles\native-lib.dir\src\main\cpp\native-lib.cpp.o.d
-  FLAGS = -isystem D:/Android/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11  -O0 -fno-limit-debug-info  -fPIC
+  FLAGS = -isystem D:/Android/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11 -std=c++11 -frtti -fexceptions -lz -O0 -fno-limit-debug-info  -fPIC
   INCLUDES = -I../../../../libs/opencv_include/sdk/native/jni/include -isystem D:/Android/android-ndk-r17c/sources/cxx-stl/llvm-libc++/include -isystem D:/Android/android-ndk-r17c/sources/android/support/include -isystem D:/Android/android-ndk-r17c/sources/cxx-stl/llvm-libc++abi/include
   IN_ABS = E:\AndroidProject\OpenCvCommonlyUsed\cameralx\src\main\cpp\native-lib.cpp
   OBJECT_DIR = CMakeFiles\native-lib.dir
@@ -49,7 +49,7 @@ build CMakeFiles/native-lib.dir/src/main/cpp/native-lib.cpp.o: CXX_COMPILER__nat
 # Link the shared library ..\..\..\..\build\intermediates\cmake\debug\obj\arm64-v8a\libnative-lib.so
 
 build ../../../../build/intermediates/cmake/debug/obj/arm64-v8a/libnative-lib.so: CXX_SHARED_LIBRARY_LINKER__native-lib CMakeFiles/native-lib.dir/src/main/cpp/native-lib.cpp.o | ../../../../src/main/jniLibs/arm64-v8a/libopencv_java3.so
-  LANGUAGE_COMPILE_FLAGS = -isystem D:/Android/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11  -O0 -fno-limit-debug-info
+  LANGUAGE_COMPILE_FLAGS = -isystem D:/Android/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11 -std=c++11 -frtti -fexceptions -lz -O0 -fno-limit-debug-info
   LINK_FLAGS = -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -nostdlib++ --sysroot D:/Android/android-ndk-r17c/platforms/android-21/arch-arm64 -Wl,--build-id -Wl,--warn-shared-textrel -Wl,--fatal-warnings -LD:/Android/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/arm64-v8a -Wl,--no-undefined -Wl,-z,noexecstack -Qunused-arguments -Wl,-z,relro -Wl,-z,now
   LINK_LIBRARIES = ../../../../src/main/jniLibs/arm64-v8a/libopencv_java3.so -latomic -lm "D:/Android/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_static.a" "D:/Android/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++abi.a"
   OBJECT_DIR = CMakeFiles\native-lib.dir
@@ -65,7 +65,7 @@ build ../../../../build/intermediates/cmake/debug/obj/arm64-v8a/libnative-lib.so
 build CMakeFiles/magic-lib.dir/src/main/cpp/magic-lib.cpp.o: CXX_COMPILER__magic-lib ../../../../src/main/cpp/magic-lib.cpp
   DEFINES = -Dmagic_lib_EXPORTS
   DEP_FILE = CMakeFiles\magic-lib.dir\src\main\cpp\magic-lib.cpp.o.d
-  FLAGS = -isystem D:/Android/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11  -O0 -fno-limit-debug-info  -fPIC
+  FLAGS = -isystem D:/Android/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11 -std=c++11 -frtti -fexceptions -lz -O0 -fno-limit-debug-info  -fPIC
   INCLUDES = -I../../../../libs/opencv_include/sdk/native/jni/include -isystem D:/Android/android-ndk-r17c/sources/cxx-stl/llvm-libc++/include -isystem D:/Android/android-ndk-r17c/sources/android/support/include -isystem D:/Android/android-ndk-r17c/sources/cxx-stl/llvm-libc++abi/include
   IN_ABS = E:\AndroidProject\OpenCvCommonlyUsed\cameralx\src\main\cpp\magic-lib.cpp
   OBJECT_DIR = CMakeFiles\magic-lib.dir
@@ -79,7 +79,7 @@ build CMakeFiles/magic-lib.dir/src/main/cpp/magic-lib.cpp.o: CXX_COMPILER__magic
 # Link the shared library ..\..\..\..\build\intermediates\cmake\debug\obj\arm64-v8a\libmagic-lib.so
 
 build ../../../../build/intermediates/cmake/debug/obj/arm64-v8a/libmagic-lib.so: CXX_SHARED_LIBRARY_LINKER__magic-lib CMakeFiles/magic-lib.dir/src/main/cpp/magic-lib.cpp.o | ../../../../src/main/jniLibs/arm64-v8a/libopencv_java3.so
-  LANGUAGE_COMPILE_FLAGS = -isystem D:/Android/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11  -O0 -fno-limit-debug-info
+  LANGUAGE_COMPILE_FLAGS = -isystem D:/Android/android-ndk-r17c/sysroot/usr/include/aarch64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11 -std=c++11 -frtti -fexceptions -lz -O0 -fno-limit-debug-info
   LINK_FLAGS = -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -nostdlib++ --sysroot D:/Android/android-ndk-r17c/platforms/android-21/arch-arm64 -Wl,--build-id -Wl,--warn-shared-textrel -Wl,--fatal-warnings -LD:/Android/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/arm64-v8a -Wl,--no-undefined -Wl,-z,noexecstack -Qunused-arguments -Wl,-z,relro -Wl,-z,now
   LINK_LIBRARIES = ../../../../src/main/jniLibs/arm64-v8a/libopencv_java3.so -latomic -lm "D:/Android/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_static.a" "D:/Android/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++abi.a"
   OBJECT_DIR = CMakeFiles\magic-lib.dir

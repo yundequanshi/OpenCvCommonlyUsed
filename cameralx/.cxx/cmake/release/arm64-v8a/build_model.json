@@ -31,7 +31,9 @@
     },
     "buildSystemArgumentList": [],
     "cFlagList": [],
-    "cppFlagsList": [],
+    "cppFlagsList": [
+      "-std\u003dc++11 -frtti -fexceptions -lz"
+    ],
     "variantName": "release",
     "soFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\build\\intermediates\\cmake\\release\\lib",
     "objFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\build\\intermediates\\cmake\\release\\obj",

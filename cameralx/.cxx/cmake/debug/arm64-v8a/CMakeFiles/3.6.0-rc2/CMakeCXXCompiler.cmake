@@ -63,6 +63,6 @@ endif()
 
 
 
-set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "m;dl;c;dl")
+set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "z;m;dl;c;dl")
 set(CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES "D:/Android/android-ndk-r17c/sources/cxx-stl/llvm-libc++/libs/arm64-v8a;D:/Android/android-ndk-r17c/toolchains/llvm/prebuilt/windows-x86_64/lib64/clang/6.0.2/lib/linux/aarch64;D:/Android/android-ndk-r17c/toolchains/aarch64-linux-android-4.9/prebuilt/windows-x86_64/lib/gcc/aarch64-linux-android/4.9.x;D:/Android/android-ndk-r17c/toolchains/aarch64-linux-android-4.9/prebuilt/windows-x86_64/aarch64-linux-android/lib64;D:/Android/android-ndk-r17c/toolchains/aarch64-linux-android-4.9/prebuilt/windows-x86_64/aarch64-linux-android/lib;D:/Android/android-ndk-r17c/platforms/android-21/arch-arm64/usr/lib")
 set(CMAKE_CXX_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")

@@ -5,6 +5,7 @@
       "sdkFolder": "D:\\Android\\Sdk",
       "isNativeCompilerSettingsCacheEnabled": false,
       "isBuildOnlyTargetAbiEnabled": true,
+      "ideBuildTargetAbi": "arm64-v8a,armeabi-v7a,armeabi",
       "splitsAbiFilterSet": [],
       "intermediatesFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\build\\intermediates",
       "gradleModulePathName": ":cameralx",
@@ -31,7 +32,9 @@
     },
     "buildSystemArgumentList": [],
     "cFlagList": [],
-    "cppFlagsList": [],
+    "cppFlagsList": [
+      "-std\u003dc++11 -frtti -fexceptions -lz"
+    ],
     "variantName": "debug",
     "soFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\build\\intermediates\\cmake\\debug\\lib",
     "objFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\build\\intermediates\\cmake\\debug\\obj",
@@ -39,10 +42,8 @@
     "gradleBuildOutputFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\.cxx\\cxx\\debug",
     "isDebuggableEnabled": true,
     "validAbiList": [
-      "ARMEABI_V7A",
       "ARM64_V8A",
-      "X86",
-      "X86_64"
+      "ARMEABI_V7A"
     ],
     "buildTargetSet": []
   },

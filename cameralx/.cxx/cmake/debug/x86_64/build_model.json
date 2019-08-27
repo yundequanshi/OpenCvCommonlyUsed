@@ -31,7 +31,9 @@
     },
     "buildSystemArgumentList": [],
     "cFlagList": [],
-    "cppFlagsList": [],
+    "cppFlagsList": [
+      "-std\u003dc++11 -frtti -fexceptions -lz"
+    ],
     "variantName": "debug",
     "soFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\build\\intermediates\\cmake\\debug\\lib",
     "objFolder": "E:\\AndroidProject\\OpenCvCommonlyUsed\\cameralx\\build\\intermediates\\cmake\\debug\\obj",
