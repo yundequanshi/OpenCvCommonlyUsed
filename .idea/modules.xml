@@ -8,7 +8,6 @@
       <module fileurl="file://$PROJECT_DIR$/cameralx/cameralx.iml" filepath="$PROJECT_DIR$/cameralx/cameralx.iml" />
       <module fileurl="file://$PROJECT_DIR$/cameraview/cameraview.iml" filepath="$PROJECT_DIR$/cameraview/cameraview.iml" />
       <module fileurl="file://$PROJECT_DIR$/opencvlib345/opencvlib345.iml" filepath="$PROJECT_DIR$/opencvlib345/opencvlib345.iml" />
-      <module fileurl="file://$PROJECT_DIR$/opencvuilts/opencvuilts.iml" filepath="$PROJECT_DIR$/opencvuilts/opencvuilts.iml" />
     </modules>
   </component>
 </project>
