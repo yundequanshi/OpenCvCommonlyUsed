@@ -29,7 +29,9 @@
       ],
       "cmakeToolchainFile": "."
     },
-    "buildSystemArgumentList": [],
+    "buildSystemArgumentList": [
+      "-DANDROID_STL\u003dgnustl_shared"
+    ],
     "cFlagList": [],
     "cppFlagsList": [
       "-std\u003dc++11 -frtti -fexceptions -lz"
