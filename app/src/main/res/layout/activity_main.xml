@@ -15,11 +15,11 @@
         app:cameraAudio="off"
         app:cameraExperimental="true"
         app:cameraFlash="off"
-        app:cameraGestureLongTap="focusWithMarker"
+        app:cameraGestureLongTap="autoFocus"
         app:cameraGesturePinch="zoom"
         app:cameraGestureScrollHorizontal="exposureCorrection"
         app:cameraGestureScrollVertical="exposureCorrection"
-        app:cameraGestureTap="focusWithMarker"
+        app:cameraGestureTap="autoFocus"
         app:cameraGrid="off"
         app:cameraMode="picture"
         app:cameraPlaySounds="true" />

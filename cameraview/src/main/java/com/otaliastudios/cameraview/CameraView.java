@@ -1,10 +1,5 @@
 package com.otaliastudios.cameraview;
 
-import static android.view.View.MeasureSpec.AT_MOST;
-import static android.view.View.MeasureSpec.EXACTLY;
-import static android.view.View.MeasureSpec.UNSPECIFIED;
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -28,17 +23,80 @@ import android.os.Looper;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+
+
+import com.otaliastudios.cameraview.controls.Audio;
+import com.otaliastudios.cameraview.controls.Control;
+import com.otaliastudios.cameraview.controls.ControlParser;
+import com.otaliastudios.cameraview.controls.Engine;
+import com.otaliastudios.cameraview.controls.Facing;
+import com.otaliastudios.cameraview.controls.Flash;
+import com.otaliastudios.cameraview.controls.Grid;
+import com.otaliastudios.cameraview.controls.Hdr;
+import com.otaliastudios.cameraview.controls.Mode;
+import com.otaliastudios.cameraview.controls.Preview;
+import com.otaliastudios.cameraview.controls.VideoCodec;
+import com.otaliastudios.cameraview.controls.WhiteBalance;
+import com.otaliastudios.cameraview.engine.Camera1Engine;
+import com.otaliastudios.cameraview.engine.Camera2Engine;
+import com.otaliastudios.cameraview.engine.CameraEngine;
+import com.otaliastudios.cameraview.engine.offset.Reference;
+import com.otaliastudios.cameraview.filter.Filter;
+import com.otaliastudios.cameraview.filter.FilterParser;
+import com.otaliastudios.cameraview.filter.Filters;
+import com.otaliastudios.cameraview.filter.NoFilter;
+import com.otaliastudios.cameraview.filter.OneParameterFilter;
+import com.otaliastudios.cameraview.filter.TwoParameterFilter;
+import com.otaliastudios.cameraview.frame.Frame;
+import com.otaliastudios.cameraview.frame.FrameProcessor;
+import com.otaliastudios.cameraview.gesture.Gesture;
+import com.otaliastudios.cameraview.gesture.GestureAction;
+import com.otaliastudios.cameraview.gesture.GestureFinder;
+import com.otaliastudios.cameraview.gesture.GestureParser;
+import com.otaliastudios.cameraview.gesture.PinchGestureFinder;
+import com.otaliastudios.cameraview.gesture.ScrollGestureFinder;
+import com.otaliastudios.cameraview.gesture.TapGestureFinder;
+import com.otaliastudios.cameraview.internal.GridLinesLayout;
+import com.otaliastudios.cameraview.internal.utils.CropHelper;
+import com.otaliastudios.cameraview.internal.utils.OrientationHelper;
+import com.otaliastudios.cameraview.internal.utils.WorkerHandler;
+import com.otaliastudios.cameraview.markers.AutoFocusMarker;
+import com.otaliastudios.cameraview.markers.AutoFocusTrigger;
+import com.otaliastudios.cameraview.markers.MarkerLayout;
+import com.otaliastudios.cameraview.markers.MarkerParser;
+import com.otaliastudios.cameraview.overlay.OverlayLayout;
+import com.otaliastudios.cameraview.preview.CameraPreview;
+import com.otaliastudios.cameraview.preview.FilterCameraPreview;
+import com.otaliastudios.cameraview.preview.GlCameraPreview;
+import com.otaliastudios.cameraview.preview.SurfaceCameraPreview;
+import com.otaliastudios.cameraview.preview.TextureCameraPreview;
+import com.otaliastudios.cameraview.size.AspectRatio;
+import com.otaliastudios.cameraview.size.Size;
+import com.otaliastudios.cameraview.size.SizeSelector;
+import com.otaliastudios.cameraview.size.SizeSelectorParser;
+import com.otaliastudios.cameraview.size.SizeSelectors;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static android.view.View.MeasureSpec.AT_MOST;
+import static android.view.View.MeasureSpec.EXACTLY;
+import static android.view.View.MeasureSpec.UNSPECIFIED;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
+/**
+ * Entry point for the whole library.
+ * Please read documentation for usage and full set of features.
+ */
 public class CameraView extends FrameLayout implements LifecycleObserver {
 
     private final static String TAG = CameraView.class.getSimpleName();
@@ -46,30 +104,44 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
 
     public final static int PERMISSION_REQUEST_CODE = 16;
 
+    final static long DEFAULT_AUTOFOCUS_RESET_DELAY_MILLIS = 3000;
     final static boolean DEFAULT_PLAY_SOUNDS = true;
+    final static boolean DEFAULT_USE_DEVICE_ORIENTATION = true;
 
     // Self managed parameters
     private boolean mPlaySounds;
+    private boolean mUseDeviceOrientation;
     private HashMap<Gesture, GestureAction> mGestureMap = new HashMap<>(4);
     private Preview mPreview;
+    private Engine mEngine;
+    private Filter mPendingFilter;
 
     // Components
-    /* for tests */ CameraCallbacks mCameraCallbacks;
+    @VisibleForTesting CameraCallbacks mCameraCallbacks;
     private CameraPreview mCameraPreview;
     private OrientationHelper mOrientationHelper;
-    private CameraController mCameraController;
+    private CameraEngine mCameraEngine;
     private MediaActionSound mSound;
-    /* for tests */ List<CameraListener> mListeners = new CopyOnWriteArrayList<>();
-    /* for tests */ List<FrameProcessor> mFrameProcessors = new CopyOnWriteArrayList<>();
+    private AutoFocusMarker mAutoFocusMarker;
+    @VisibleForTesting List<CameraListener> mListeners = new CopyOnWriteArrayList<>();
+    @VisibleForTesting List<FrameProcessor> mFrameProcessors = new CopyOnWriteArrayList<>();
     private Lifecycle mLifecycle;
 
+    // Gestures
+    @VisibleForTesting PinchGestureFinder mPinchGestureFinder;
+    @VisibleForTesting TapGestureFinder mTapGestureFinder;
+    @VisibleForTesting ScrollGestureFinder mScrollGestureFinder;
+
     // Views
-    GridLinesLayout mGridLinesLayout;
-    PinchGestureLayout mPinchGestureLayout;
-    TapGestureLayout mTapGestureLayout;
-    ScrollGestureLayout mScrollGestureLayout;
+    @VisibleForTesting GridLinesLayout mGridLinesLayout;
+    @VisibleForTesting MarkerLayout mMarkerLayout;
     private boolean mKeepScreenOn;
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private boolean mExperimental;
+    private boolean mInEditor;
+
+    // Overlays
+    @VisibleForTesting OverlayLayout mOverlayLayout;
 
     // Threading
     private Handler mUiHandler;
@@ -77,204 +149,196 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
 
     public CameraView(@NonNull Context context) {
         super(context, null);
-        init(context, null);
+        initialize(context, null);
     }
 
     public CameraView(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        init(context, attrs);
+        initialize(context, attrs);
     }
 
     //region Init
 
     @SuppressWarnings("WrongConstant")
-    private void init(@NonNull Context context, @Nullable AttributeSet attrs) {
+    private void initialize(@NonNull Context context, @Nullable AttributeSet attrs) {
+        mInEditor = isInEditMode();
+        if (mInEditor) return;
+
         setWillNotDraw(false);
         TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.CameraView, 0, 0);
+        ControlParser controls = new ControlParser(context, a);
 
         // Self managed
         boolean playSounds = a.getBoolean(R.styleable.CameraView_cameraPlaySounds, DEFAULT_PLAY_SOUNDS);
+        boolean useDeviceOrientation = a.getBoolean(R.styleable.CameraView_cameraUseDeviceOrientation, DEFAULT_USE_DEVICE_ORIENTATION);
         mExperimental = a.getBoolean(R.styleable.CameraView_cameraExperimental, false);
-        mPreview = Preview.fromValue(a.getInteger(R.styleable.CameraView_cameraPreview, Preview.DEFAULT.value()));
+        mPreview = controls.getPreview();
+        mEngine = controls.getEngine();
 
-        // Camera controller params
-        Facing facing = Facing.fromValue(a.getInteger(R.styleable.CameraView_cameraFacing, Facing.DEFAULT(context).value()));
-        Flash flash = Flash.fromValue(a.getInteger(R.styleable.CameraView_cameraFlash, Flash.DEFAULT.value()));
-        Grid grid = Grid.fromValue(a.getInteger(R.styleable.CameraView_cameraGrid, Grid.DEFAULT.value()));
-        int gridColor = a.getColor(R.styleable.CameraView_cameraGrid, GridLinesLayout.DEFAULT_COLOR);
-        WhiteBalance whiteBalance = WhiteBalance.fromValue(a.getInteger(R.styleable.CameraView_cameraWhiteBalance, WhiteBalance.DEFAULT.value()));
-        Mode mode = Mode.fromValue(a.getInteger(R.styleable.CameraView_cameraMode, Mode.DEFAULT.value()));
-        Hdr hdr = Hdr.fromValue(a.getInteger(R.styleable.CameraView_cameraHdr, Hdr.DEFAULT.value()));
-        Audio audio = Audio.fromValue(a.getInteger(R.styleable.CameraView_cameraAudio, Audio.DEFAULT.value()));
-        VideoCodec codec = VideoCodec.fromValue(a.getInteger(R.styleable.CameraView_cameraVideoCodec, VideoCodec.DEFAULT.value()));
+        // Camera engine params
+        int gridColor = a.getColor(R.styleable.CameraView_cameraGridColor, GridLinesLayout.DEFAULT_COLOR);
         long videoMaxSize = (long) a.getFloat(R.styleable.CameraView_cameraVideoMaxSize, 0);
         int videoMaxDuration = a.getInteger(R.styleable.CameraView_cameraVideoMaxDuration, 0);
         int videoBitRate = a.getInteger(R.styleable.CameraView_cameraVideoBitRate, 0);
         int audioBitRate = a.getInteger(R.styleable.CameraView_cameraAudioBitRate, 0);
+        long autoFocusResetDelay = (long) a.getInteger(R.styleable.CameraView_cameraAutoFocusResetDelay, (int) DEFAULT_AUTOFOCUS_RESET_DELAY_MILLIS);
 
-        // Picture size selector
-        List<SizeSelector> pictureConstraints = new ArrayList<>(3);
-        if (a.hasValue(R.styleable.CameraView_cameraPictureSizeMinWidth)) {
-            pictureConstraints.add(SizeSelectors.minWidth(a.getInteger(R.styleable.CameraView_cameraPictureSizeMinWidth, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraPictureSizeMaxWidth)) {
-            pictureConstraints.add(SizeSelectors.maxWidth(a.getInteger(R.styleable.CameraView_cameraPictureSizeMaxWidth, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraPictureSizeMinHeight)) {
-            pictureConstraints.add(SizeSelectors.minHeight(a.getInteger(R.styleable.CameraView_cameraPictureSizeMinHeight, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraPictureSizeMaxHeight)) {
-            pictureConstraints.add(SizeSelectors.maxHeight(a.getInteger(R.styleable.CameraView_cameraPictureSizeMaxHeight, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraPictureSizeMinArea)) {
-            pictureConstraints.add(SizeSelectors.minArea(a.getInteger(R.styleable.CameraView_cameraPictureSizeMinArea, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraPictureSizeMaxArea)) {
-            pictureConstraints.add(SizeSelectors.maxArea(a.getInteger(R.styleable.CameraView_cameraPictureSizeMaxArea, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraPictureSizeAspectRatio)) {
-            //noinspection ConstantConditions
-            pictureConstraints.add(SizeSelectors.aspectRatio(AspectRatio.parse(a.getString(R.styleable.CameraView_cameraPictureSizeAspectRatio)), 0));
-        }
-
-        if (a.getBoolean(R.styleable.CameraView_cameraPictureSizeSmallest, false)) pictureConstraints.add(SizeSelectors.smallest());
-        if (a.getBoolean(R.styleable.CameraView_cameraPictureSizeBiggest, false)) pictureConstraints.add(SizeSelectors.biggest());
-        SizeSelector pictureSelector = !pictureConstraints.isEmpty() ?
-                SizeSelectors.and(pictureConstraints.toArray(new SizeSelector[0])) :
-                SizeSelectors.biggest();
-
-        // Video size selector
-        List<SizeSelector> videoConstraints = new ArrayList<>(3);
-        if (a.hasValue(R.styleable.CameraView_cameraVideoSizeMinWidth)) {
-            videoConstraints.add(SizeSelectors.minWidth(a.getInteger(R.styleable.CameraView_cameraVideoSizeMinWidth, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraVideoSizeMaxWidth)) {
-            videoConstraints.add(SizeSelectors.maxWidth(a.getInteger(R.styleable.CameraView_cameraVideoSizeMaxWidth, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraVideoSizeMinHeight)) {
-            videoConstraints.add(SizeSelectors.minHeight(a.getInteger(R.styleable.CameraView_cameraVideoSizeMinHeight, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraVideoSizeMaxHeight)) {
-            videoConstraints.add(SizeSelectors.maxHeight(a.getInteger(R.styleable.CameraView_cameraVideoSizeMaxHeight, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraVideoSizeMinArea)) {
-            videoConstraints.add(SizeSelectors.minArea(a.getInteger(R.styleable.CameraView_cameraVideoSizeMinArea, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraVideoSizeMaxArea)) {
-            videoConstraints.add(SizeSelectors.maxArea(a.getInteger(R.styleable.CameraView_cameraVideoSizeMaxArea, 0)));
-        }
-        if (a.hasValue(R.styleable.CameraView_cameraVideoSizeAspectRatio)) {
-            //noinspection ConstantConditions
-            videoConstraints.add(SizeSelectors.aspectRatio(AspectRatio.parse(a.getString(R.styleable.CameraView_cameraVideoSizeAspectRatio)), 0));
-        }
-        if (a.getBoolean(R.styleable.CameraView_cameraVideoSizeSmallest, false)) videoConstraints.add(SizeSelectors.smallest());
-        if (a.getBoolean(R.styleable.CameraView_cameraVideoSizeBiggest, false)) videoConstraints.add(SizeSelectors.biggest());
-        SizeSelector videoSelector = !videoConstraints.isEmpty() ?
-                SizeSelectors.and(videoConstraints.toArray(new SizeSelector[0])) :
-                SizeSelectors.biggest();
-
-        // Gestures
-        GestureAction tapGesture = GestureAction.fromValue(a.getInteger(R.styleable.CameraView_cameraGestureTap, GestureAction.DEFAULT_TAP.value()));
-        GestureAction longTapGesture = GestureAction.fromValue(a.getInteger(R.styleable.CameraView_cameraGestureLongTap, GestureAction.DEFAULT_LONG_TAP.value()));
-        GestureAction pinchGesture = GestureAction.fromValue(a.getInteger(R.styleable.CameraView_cameraGesturePinch, GestureAction.DEFAULT_PINCH.value()));
-        GestureAction scrollHorizontalGesture = GestureAction.fromValue(a.getInteger(R.styleable.CameraView_cameraGestureScrollHorizontal, GestureAction.DEFAULT_SCROLL_HORIZONTAL.value()));
-        GestureAction scrollVerticalGesture = GestureAction.fromValue(a.getInteger(R.styleable.CameraView_cameraGestureScrollVertical, GestureAction.DEFAULT_SCROLL_VERTICAL.value()));
+        // Size selectors and gestures
+        SizeSelectorParser sizeSelectors = new SizeSelectorParser(a);
+        GestureParser gestures = new GestureParser(a);
+        MarkerParser markers = new MarkerParser(a);
+        FilterParser filters = new FilterParser(a);
 
         a.recycle();
 
         // Components
-        mCameraCallbacks = new Callbacks();
-        mCameraController = instantiateCameraController(mCameraCallbacks);
+        mCameraCallbacks = new CameraCallbacks();
         mUiHandler = new Handler(Looper.getMainLooper());
         mFrameProcessorsHandler = WorkerHandler.get("FrameProcessorsWorker");
 
+        // Gestures
+        mPinchGestureFinder = new PinchGestureFinder(mCameraCallbacks);
+        mTapGestureFinder = new TapGestureFinder(mCameraCallbacks);
+        mScrollGestureFinder = new ScrollGestureFinder(mCameraCallbacks);
+
         // Views
         mGridLinesLayout = new GridLinesLayout(context);
-        mPinchGestureLayout = new PinchGestureLayout(context);
-        mTapGestureLayout = new TapGestureLayout(context);
-        mScrollGestureLayout = new ScrollGestureLayout(context);
+        mOverlayLayout = new OverlayLayout(context);
+        mMarkerLayout = new MarkerLayout(context);
         addView(mGridLinesLayout);
-        addView(mPinchGestureLayout);
-        addView(mTapGestureLayout);
-        addView(mScrollGestureLayout);
+        addView(mMarkerLayout);
+        addView(mOverlayLayout);
+
+        // Create the engine
+        doInstantiateEngine();
 
         // Apply self managed
         setPlaySounds(playSounds);
-
-        // Apply camera controller params
-        setFacing(facing);
-        setFlash(flash);
-        setMode(mode);
-        setWhiteBalance(whiteBalance);
-        setGrid(grid);
+        setUseDeviceOrientation(useDeviceOrientation);
+        setGrid(controls.getGrid());
         setGridColor(gridColor);
-        setHdr(hdr);
-        setAudio(audio);
+
+        // Apply camera engine params
+        // Adding new ones? See setEngine().
+        setFacing(controls.getFacing());
+        setFlash(controls.getFlash());
+        setMode(controls.getMode());
+        setWhiteBalance(controls.getWhiteBalance());
+        setHdr(controls.getHdr());
+        setAudio(controls.getAudio());
         setAudioBitRate(audioBitRate);
-        setPictureSize(pictureSelector);
-        setVideoSize(videoSelector);
-        setVideoCodec(codec);
+        setPictureSize(sizeSelectors.getPictureSizeSelector());
+        setVideoSize(sizeSelectors.getVideoSizeSelector());
+        setVideoCodec(controls.getVideoCodec());
         setVideoMaxSize(videoMaxSize);
         setVideoMaxDuration(videoMaxDuration);
         setVideoBitRate(videoBitRate);
+        setAutoFocusResetDelay(autoFocusResetDelay);
 
         // Apply gestures
-        mapGesture(Gesture.TAP, tapGesture);
-        mapGesture(Gesture.LONG_TAP, longTapGesture);
-        mapGesture(Gesture.PINCH, pinchGesture);
-        mapGesture(Gesture.SCROLL_HORIZONTAL, scrollHorizontalGesture);
-        mapGesture(Gesture.SCROLL_VERTICAL, scrollVerticalGesture);
+        mapGesture(Gesture.TAP, gestures.getTapAction());
+        mapGesture(Gesture.LONG_TAP, gestures.getLongTapAction());
+        mapGesture(Gesture.PINCH, gestures.getPinchAction());
+        mapGesture(Gesture.SCROLL_HORIZONTAL, gestures.getHorizontalScrollAction());
+        mapGesture(Gesture.SCROLL_VERTICAL, gestures.getVerticalScrollAction());
 
-        if (!isInEditMode()) {
-            mOrientationHelper = new OrientationHelper(context, mCameraCallbacks);
+        // Apply markers
+        setAutoFocusMarker(markers.getAutoFocusMarker());
+
+        // Apply filters
+        setFilter(filters.getFilter());
+
+        // Create the orientation helper
+        mOrientationHelper = new OrientationHelper(context, mCameraCallbacks);
+    }
+
+    /**
+     * Engine is instantiated on creation and anytime
+     * {@link #setEngine(Engine)} is called.
+     */
+    private void doInstantiateEngine() {
+        LOG.w("doInstantiateEngine:", "instantiating. engine:", mEngine);
+        mCameraEngine = instantiateCameraEngine(mEngine, mCameraCallbacks);
+        LOG.w("doInstantiateEngine:", "instantiated. engine:", mCameraEngine.getClass().getSimpleName());
+        mCameraEngine.setOverlay(mOverlayLayout);
+    }
+
+    /**
+     * Preview is instantiated {@link #onAttachedToWindow()}, because
+     * we want to know if we're hardware accelerated or not.
+     * However, in tests, we might want to create the preview right after constructor.
+     */
+    @VisibleForTesting
+    void doInstantiatePreview() {
+        LOG.w("doInstantiateEngine:", "instantiating. preview:", mPreview);
+        mCameraPreview = instantiatePreview(mPreview, getContext(), this);
+        LOG.w("doInstantiateEngine:", "instantiated. preview:", mCameraPreview.getClass().getSimpleName());
+        mCameraEngine.setPreview(mCameraPreview);
+        if (mPendingFilter != null) {
+            setFilter(mPendingFilter);
+            mPendingFilter = null;
         }
     }
 
-    protected CameraController instantiateCameraController(CameraCallbacks callbacks) {
-        return new Camera1(callbacks);
+
+    /**
+     * Instantiates the camera engine.
+     *
+     * @param engine the engine preference
+     * @param callback the engine callback
+     * @return the engine
+     */
+    @NonNull
+    protected CameraEngine instantiateCameraEngine(@NonNull Engine engine, @NonNull CameraEngine.Callback callback) {
+        if (mExperimental && engine == Engine.CAMERA2 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            return new Camera2Engine(callback);
+        } else {
+            mEngine = Engine.CAMERA1;
+            return new Camera1Engine(callback);
+        }
     }
 
-    protected CameraPreview instantiatePreview(Context context, ViewGroup container) {
-        LOG.w("preview:", "isHardwareAccelerated:", isHardwareAccelerated());
-        switch (mPreview) {
+    /**
+     * Instantiates the camera preview.
+     *
+     * @param preview current preview value
+     * @param context a context
+     * @param container the container
+     * @return the preview
+     */
+    @NonNull
+    protected CameraPreview instantiatePreview(@NonNull Preview preview, @NonNull Context context, @NonNull ViewGroup container) {
+        switch (preview) {
             case SURFACE:
-                return new SurfaceCameraPreview(context, container, null);
+                return new SurfaceCameraPreview(context, container);
             case TEXTURE: {
                 if (isHardwareAccelerated()) {
                     // TextureView is not supported without hardware acceleration.
-                    return new TextureCameraPreview(context, container, null);
+                    return new TextureCameraPreview(context, container);
                 }
             }
             case GL_SURFACE: default: {
                 mPreview = Preview.GL_SURFACE;
-                return new GlCameraPreview(context, container, null);
+                return new GlCameraPreview(context, container);
             }
         }
-    }
-
-    /* for tests */ void instantiatePreview() {
-        mCameraPreview = instantiatePreview(getContext(), this);
-        mCameraController.setPreview(mCameraPreview);
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+        if (mInEditor) return;
         if (mCameraPreview == null) {
             // isHardwareAccelerated will return the real value only after we are
             // attached. That's why we instantiate the preview here.
-            instantiatePreview();
+            doInstantiatePreview();
         }
-        if (!isInEditMode()) {
-            mOrientationHelper.enable(getContext());
-        }
+        mOrientationHelper.enable(getContext());
     }
 
     @Override
     protected void onDetachedFromWindow() {
-        if (!isInEditMode()) {
-            mOrientationHelper.disable();
-        }
+        if (!mInEditor) mOrientationHelper.disable();
         super.onDetachedFromWindow();
     }
 
@@ -309,7 +373,15 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        Size previewSize = mCameraController.getPreviewStreamSize(CameraController.REF_VIEW);
+        if (mInEditor) {
+            final int width = MeasureSpec.getSize(widthMeasureSpec);
+            final int height = MeasureSpec.getSize(heightMeasureSpec);
+            super.onMeasure(MeasureSpec.makeMeasureSpec(width, EXACTLY),
+                    MeasureSpec.makeMeasureSpec(height, EXACTLY));
+            return;
+        }
+
+        Size previewSize = mCameraEngine.getPreviewStreamSize(Reference.VIEW);
         if (previewSize == null) {
             LOG.w("onMeasure:", "surface is not ready. Calling default behavior.");
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -345,7 +417,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
         // other than respect it. The preview will eventually be cropped at the sides (by PreviewImpl scaling)
         // except the case in which these fixed dimensions manage to fit exactly the preview aspect ratio.
         if (widthMode == EXACTLY && heightMode == EXACTLY) {
-            LOG.w("onMeasure:", "both are MATCH_PARENT or fixed value. We adapt.",
+            LOG.i("onMeasure:", "both are MATCH_PARENT or fixed value. We adapt.",
                     "This means CROP_CENTER.", "(" + widthValue + "x" + heightValue + ")");
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
             return;
@@ -375,10 +447,10 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
             int height, width;
             if (freeWidth) {
                 height = heightValue;
-                width = (int) (height / ratio);
+                width = Math.round(height / ratio);
             } else {
                 width = widthValue;
-                height = (int) (width * ratio);
+                height = Math.round(width * ratio);
             }
             LOG.i("onMeasure:", "one dimension was free, we adapted it to fit the aspect ratio.",
                     "(" + width + "x" + height + ")");
@@ -395,10 +467,10 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
             int height, width;
             if (freeWidth) {
                 height = heightValue;
-                width = Math.min((int) (height / ratio), widthValue);
+                width = Math.min(Math.round(height / ratio), widthValue);
             } else {
                 width = widthValue;
-                height = Math.min((int) (width * ratio), heightValue);
+                height = Math.min(Math.round(width * ratio), heightValue);
             }
             LOG.i("onMeasure:", "one dimension was EXACTLY, another AT_MOST.",
                     "We have TRIED to fit the aspect ratio, but it's not guaranteed.",
@@ -415,10 +487,10 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
         if (atMostRatio >= ratio) {
             // We must reduce height.
             width = widthValue;
-            height = (int) (width * ratio);
+            height = Math.round(width * ratio);
         } else {
             height = heightValue;
-            width = (int) (height / ratio);
+            width = Math.round(height / ratio);
         }
         LOG.i("onMeasure:", "both dimension were AT_MOST.",
                 "We fit the preview aspect ratio.",
@@ -452,19 +524,19 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
             mGestureMap.put(gesture, action);
             switch (gesture) {
                 case PINCH:
-                    mPinchGestureLayout.enable(mGestureMap.get(Gesture.PINCH) != none);
+                    mPinchGestureFinder.setActive(mGestureMap.get(Gesture.PINCH) != none);
                     break;
                 case TAP:
                 // case DOUBLE_TAP:
                 case LONG_TAP:
-                    mTapGestureLayout.enable(
+                    mTapGestureFinder.setActive(
                             mGestureMap.get(Gesture.TAP) != none ||
                             // mGestureMap.get(Gesture.DOUBLE_TAP) != none ||
                             mGestureMap.get(Gesture.LONG_TAP) != none);
                     break;
                 case SCROLL_HORIZONTAL:
                 case SCROLL_VERTICAL:
-                    mScrollGestureLayout.enable(
+                    mScrollGestureFinder.setActive(
                             mGestureMap.get(Gesture.SCROLL_HORIZONTAL) != none ||
                             mGestureMap.get(Gesture.SCROLL_VERTICAL) != none);
                     break;
@@ -493,6 +565,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @NonNull
     public GestureAction getGestureAction(@NonNull Gesture gesture) {
+        //noinspection ConstantConditions
         return mGestureMap.get(gesture);
     }
 
@@ -503,61 +576,88 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
     }
 
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (!isOpened()) return true;
 
         // Pass to our own GestureLayouts
-        CameraOptions options = mCameraController.getCameraOptions(); // Non null
-        if (mPinchGestureLayout.onTouchEvent(event)) {
+        CameraOptions options = mCameraEngine.getCameraOptions(); // Non null
+        if (options == null) throw new IllegalStateException("Options should not be null here.");
+        if (mPinchGestureFinder.onTouchEvent(event)) {
             LOG.i("onTouchEvent", "pinch!");
-            onGesture(mPinchGestureLayout, options);
-        } else if (mScrollGestureLayout.onTouchEvent(event)) {
+            onGesture(mPinchGestureFinder, options);
+        } else if (mScrollGestureFinder.onTouchEvent(event)) {
             LOG.i("onTouchEvent", "scroll!");
-            onGesture(mScrollGestureLayout, options);
-        } else if (mTapGestureLayout.onTouchEvent(event)) {
+            onGesture(mScrollGestureFinder, options);
+        } else if (mTapGestureFinder.onTouchEvent(event)) {
             LOG.i("onTouchEvent", "tap!");
-            onGesture(mTapGestureLayout, options);
+            onGesture(mTapGestureFinder, options);
         }
+
         return true;
     }
 
 
     // Some gesture layout detected a gesture. It's not known at this moment:
     // (1) if it was mapped to some action (we check here)
-    // (2) if it's supported by the camera (CameraController checks)
-    private void onGesture(GestureLayout source, @NonNull CameraOptions options) {
-        Gesture gesture = source.getGestureType();
+    // (2) if it's supported by the camera (CameraEngine checks)
+    private void onGesture(@NonNull GestureFinder source, @NonNull CameraOptions options) {
+        Gesture gesture = source.getGesture();
         GestureAction action = mGestureMap.get(gesture);
         PointF[] points = source.getPoints();
         float oldValue, newValue;
+        //noinspection ConstantConditions
         switch (action) {
 
-            case CAPTURE:
-                mCameraController.takePicture();
+            case TAKE_PICTURE:
+                takePicture();
                 break;
 
-            case FOCUS:
-            case FOCUS_WITH_MARKER:
-                mCameraController.startAutoFocus(gesture, points[0]);
+            case AUTO_FOCUS:
+                mCameraEngine.startAutoFocus(gesture, points[0]);
                 break;
 
             case ZOOM:
-                oldValue = mCameraController.getZoomValue();
-                newValue = source.scaleValue(oldValue, 0, 1);
+                oldValue = mCameraEngine.getZoomValue();
+                newValue = source.computeValue(oldValue, 0, 1);
                 if (newValue != oldValue) {
-                    mCameraController.setZoom(newValue, points, true);
+                    mCameraEngine.setZoom(newValue, points, true);
                 }
                 break;
 
             case EXPOSURE_CORRECTION:
-                oldValue = mCameraController.getExposureCorrectionValue();
+                oldValue = mCameraEngine.getExposureCorrectionValue();
                 float minValue = options.getExposureCorrectionMinValue();
                 float maxValue = options.getExposureCorrectionMaxValue();
-                newValue = source.scaleValue(oldValue, minValue, maxValue);
+                newValue = source.computeValue(oldValue, minValue, maxValue);
                 if (newValue != oldValue) {
                     float[] bounds = new float[]{minValue, maxValue};
-                    mCameraController.setExposureCorrection(newValue, bounds, points, true);
+                    mCameraEngine.setExposureCorrection(newValue, bounds, points, true);
+                }
+                break;
+
+            case FILTER_CONTROL_1:
+                if (!mExperimental) break;
+                if (getFilter() instanceof OneParameterFilter) {
+                    OneParameterFilter filter = (OneParameterFilter) getFilter();
+                    oldValue = filter.getParameter1();
+                    newValue = source.computeValue(oldValue, 0, 1);
+                    if (newValue != oldValue) {
+                        filter.setParameter1(newValue);
+                    }
+                }
+                break;
+
+            case FILTER_CONTROL_2:
+                if (!mExperimental) break;
+                if (getFilter() instanceof TwoParameterFilter) {
+                    TwoParameterFilter filter = (TwoParameterFilter) getFilter();
+                    oldValue = filter.getParameter2();
+                    newValue = source.computeValue(oldValue, 0, 1);
+                    if (newValue != oldValue) {
+                        filter.setParameter2(newValue);
+                    }
                 }
                 break;
         }
@@ -572,11 +672,11 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @return whether the camera has started
      */
     public boolean isOpened() {
-        return mCameraController.getState() >= CameraController.STATE_STARTED;
+        return mCameraEngine.getEngineState() >= CameraEngine.STATE_STARTED;
     }
 
     private boolean isClosed() {
-        return mCameraController.getState() == CameraController.STATE_STOPPED;
+        return mCameraEngine.getEngineState() == CameraEngine.STATE_STOPPED;
     }
 
     /**
@@ -598,13 +698,13 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     public void open() {
-        if (!isEnabled()) return;
+        if (mInEditor) return;
         if (mCameraPreview != null) mCameraPreview.onResume();
         if (checkPermissions(getAudio())) {
-            // Update display orientation for current CameraController
+            // Update display orientation for current CameraEngine
             mOrientationHelper.enable(getContext());
-            mCameraController.setDisplayOffset(mOrientationHelper.getDisplayOffset());
-            mCameraController.start();
+            mCameraEngine.getAngles().setDisplayOffset(mOrientationHelper.getDisplayOffset());
+            mCameraEngine.start();
         }
     }
 
@@ -624,7 +724,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
 
         Context c = getContext();
         boolean needsCamera = true;
-        boolean needsAudio = audio == Audio.ON;
+        boolean needsAudio = audio == Audio.ON || audio == Audio.MONO || audio == Audio.STEREO;
 
         needsCamera = needsCamera && c.checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED;
         needsAudio = needsAudio && c.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED;
@@ -642,7 +742,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * If the developer did not add this to its manifest, throw and fire warnings.
      */
     private void checkPermissionsManifestOrThrow(@NonNull Audio audio) {
-        if (audio == Audio.ON) {
+        if (audio == Audio.ON || audio == Audio.MONO || audio == Audio.STEREO) {
             try {
                 PackageManager manager = getContext().getPackageManager();
                 PackageInfo info = manager.getPackageInfo(getContext().getPackageName(), PackageManager.GET_PERMISSIONS);
@@ -651,9 +751,9 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
                         return;
                     }
                 }
-                LOG.e("Permission error:", "When audio is enabled (Audio.ON),",
+                String message = LOG.e("Permission error:", "When audio is enabled (Audio.ON),",
                         "the RECORD_AUDIO permission should be added to the app manifest file.");
-                throw new IllegalStateException(CameraLogger.lastMessage);
+                throw new IllegalStateException(message);
             } catch (PackageManager.NameNotFoundException e) {
                 // Not possible.
             }
@@ -667,7 +767,8 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     public void close() {
-        mCameraController.stop();
+        if (mInEditor) return;
+        mCameraEngine.stop();
         if (mCameraPreview != null) mCameraPreview.onPause();
     }
 
@@ -678,9 +779,10 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     public void destroy() {
+        if (mInEditor) return;
         clearCameraListeners();
         clearFrameProcessors();
-        mCameraController.destroy();
+        mCameraEngine.destroy();
         if (mCameraPreview != null) mCameraPreview.onDestroy();
     }
 
@@ -688,6 +790,14 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
 
     //region Public APIs for controls
 
+    /**
+     * Sets the experimental flag which occasionally can enable
+     * new, unstable beta features.
+     * @param experimental true to enable new features
+     */
+    public void setExperimental(boolean experimental) {
+        mExperimental = experimental;
+    }
 
     /**
      * Shorthand for the appropriate set* method.
@@ -714,9 +824,128 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
             setVideoCodec((VideoCodec) control);
         } else if (control instanceof Preview) {
             setPreview((Preview) control);
+        } else if (control instanceof Engine) {
+            setEngine((Engine) control);
         }
     }
 
+    /**
+     * Shorthand for the appropriate get* method.
+     * For example, if control class is a {@link Grid}, this calls {@link #getGrid()}.
+     *
+     * @param controlClass desired value class
+     * @param <T> the class type
+     * @return the control
+     */
+    @SuppressWarnings("unchecked")
+    @NonNull
+    public <T extends Control> T get(@NonNull Class<T> controlClass) {
+        if (controlClass == Audio.class) {
+            return (T) getAudio();
+        } else if (controlClass == Facing.class) {
+            return (T) getFacing();
+        } else if (controlClass == Flash.class) {
+            return (T) getFlash();
+        } else if (controlClass == Grid.class) {
+            return (T) getGrid();
+        } else if (controlClass == Hdr.class) {
+            return (T) getHdr();
+        } else if (controlClass == Mode.class) {
+            return (T) getMode();
+        } else if (controlClass == WhiteBalance.class) {
+            return (T) getWhiteBalance();
+        } else if (controlClass == VideoCodec.class) {
+            return (T) getVideoCodec();
+        } else if (controlClass == Preview.class) {
+            return (T) getPreview();
+        } else if (controlClass == Engine.class) {
+            return (T) getEngine();
+        } else {
+            throw new IllegalArgumentException("Unknown control class: " + controlClass);
+        }
+    }
+
+
+    /**
+     * Controls the preview engine. Should only be called
+     * if this CameraView was never added to any window
+     * (like if you created it programmatically).
+     * Otherwise, it has no effect.
+     *
+     * @see Preview#SURFACE
+     * @see Preview#TEXTURE
+     * @see Preview#GL_SURFACE
+     *
+     * @param preview desired preview engine
+     */
+    public void setPreview(@NonNull Preview preview) {
+        boolean isNew = preview != mPreview;
+        if (isNew) {
+            mPreview = preview;
+            boolean isAttachedToWindow = getWindowToken() != null;
+            if (!isAttachedToWindow && mCameraPreview != null) {
+                // Null the preview: will create another when re-attaching.
+                mCameraPreview.onDestroy();
+                mCameraPreview = null;
+            }
+        }
+    }
+
+    /**
+     * Returns the current preview control.
+     *
+     * @see #setPreview(Preview)
+     * @return the current preview control
+     */
+    @NonNull
+    public Preview getPreview() {
+        return mPreview;
+    }
+
+    /**
+     * Controls the core engine. Should only be called
+     * if this CameraView is closed (open() was never called).
+     * Otherwise, it has no effect.
+     *
+     * @see Engine#CAMERA1
+     * @see Engine#CAMERA2
+     *
+     * @param engine desired engine
+     */
+    public void setEngine(@NonNull Engine engine) {
+        if (!isClosed()) return;
+        mEngine = engine;
+        CameraEngine oldEngine = mCameraEngine;
+        doInstantiateEngine();
+        if (mCameraPreview != null) mCameraEngine.setPreview(mCameraPreview);
+
+        // Set again all parameters
+        setFacing(oldEngine.getFacing());
+        setFlash(oldEngine.getFlash());
+        setMode(oldEngine.getMode());
+        setWhiteBalance(oldEngine.getWhiteBalance());
+        setHdr(oldEngine.getHdr());
+        setAudio(oldEngine.getAudio());
+        setAudioBitRate(oldEngine.getAudioBitRate());
+        setPictureSize(oldEngine.getPictureSizeSelector());
+        setVideoSize(oldEngine.getVideoSizeSelector());
+        setVideoCodec(oldEngine.getVideoCodec());
+        setVideoMaxSize(oldEngine.getVideoMaxSize());
+        setVideoMaxDuration(oldEngine.getVideoMaxDuration());
+        setVideoBitRate(oldEngine.getVideoBitRate());
+        setAutoFocusResetDelay(oldEngine.getAutoFocusResetDelay());
+    }
+
+    /**
+     * Returns the current engine control.
+     *
+     * @see #setEngine(Engine)
+     * @return the current engine control
+     */
+    @NonNull
+    public Engine getEngine() {
+        return mEngine;
+    }
 
     /**
      * Returns a {@link CameraOptions} instance holding supported options for this camera
@@ -727,7 +956,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @Nullable
     public CameraOptions getCameraOptions() {
-        return mCameraController.getCameraOptions();
+        return mCameraEngine.getCameraOptions();
     }
 
 
@@ -752,7 +981,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
             if (EVvalue < min) EVvalue = min;
             if (EVvalue > max) EVvalue = max;
             float[] bounds = new float[]{min, max};
-            mCameraController.setExposureCorrection(EVvalue, bounds, null, false);
+            mCameraEngine.setExposureCorrection(EVvalue, bounds, null, false);
         }
     }
 
@@ -763,7 +992,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @return the current exposure correction value
      */
     public float getExposureCorrection() {
-        return mCameraController.getExposureCorrectionValue();
+        return mCameraEngine.getExposureCorrectionValue();
     }
 
 
@@ -780,7 +1009,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
     public void setZoom(float zoom) {
         if (zoom < 0) zoom = 0;
         if (zoom > 1) zoom = 1;
-        mCameraController.setZoom(zoom, null, false);
+        mCameraEngine.setZoom(zoom, null, false);
     }
 
 
@@ -789,7 +1018,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @return the current zoom value
      */
     public float getZoom() {
-        return mCameraController.getZoomValue();
+        return mCameraEngine.getZoomValue();
     }
 
 
@@ -845,24 +1074,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param hdr desired hdr value
      */
     public void setHdr(@NonNull Hdr hdr) {
-        mCameraController.setHdr(hdr);
-    }
-
-
-    /**
-     * Controls the preview engine. Should only be called
-     * if this CameraView was never added to any window
-     * (like if you created it programmatically).
-     * Otherwise, it has no effect.
-     *
-     * @see Preview#SURFACE
-     * @see Preview#TEXTURE
-     * @see Preview#GL_SURFACE
-     *
-     * @param preview desired preview engine
-     */
-    public void setPreview(@NonNull Preview preview) {
-        mPreview = preview;
+        mCameraEngine.setHdr(hdr);
     }
 
 
@@ -872,7 +1084,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @NonNull
     public Hdr getHdr() {
-        return mCameraController.getHdr();
+        return mCameraEngine.getHdr();
     }
 
 
@@ -888,7 +1100,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
         location.setAltitude(0);
         location.setLatitude(latitude);
         location.setLongitude(longitude);
-        mCameraController.setLocation(location);
+        mCameraEngine.setLocation(location);
     }
 
 
@@ -898,7 +1110,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param location current location
      */
     public void setLocation(@Nullable Location location) {
-        mCameraController.setLocation(location);
+        mCameraEngine.setLocation(location);
     }
 
 
@@ -909,7 +1121,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @Nullable
     public Location getLocation() {
-        return mCameraController.getLocation();
+        return mCameraEngine.getLocation();
     }
 
 
@@ -925,7 +1137,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param whiteBalance desired white balance behavior.
      */
     public void setWhiteBalance(@NonNull WhiteBalance whiteBalance) {
-        mCameraController.setWhiteBalance(whiteBalance);
+        mCameraEngine.setWhiteBalance(whiteBalance);
     }
 
 
@@ -935,7 +1147,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @NonNull
     public WhiteBalance getWhiteBalance() {
-        return mCameraController.getWhiteBalance();
+        return mCameraEngine.getWhiteBalance();
     }
 
 
@@ -948,7 +1160,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param facing a facing value.
      */
     public void setFacing(@NonNull Facing facing) {
-        mCameraController.setFacing(facing);
+        mCameraEngine.setFacing(facing);
     }
 
 
@@ -958,7 +1170,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @NonNull
     public Facing getFacing() {
-        return mCameraController.getFacing();
+        return mCameraEngine.getFacing();
     }
 
 
@@ -969,7 +1181,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @return the new facing value
      */
     public Facing toggleFacing() {
-        Facing facing = mCameraController.getFacing();
+        Facing facing = mCameraEngine.getFacing();
         switch (facing) {
             case BACK:
                 setFacing(Facing.FRONT);
@@ -980,7 +1192,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
                 break;
         }
 
-        return mCameraController.getFacing();
+        return mCameraEngine.getFacing();
     }
 
 
@@ -995,7 +1207,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param flash desired flash mode.
      */
     public void setFlash(@NonNull Flash flash) {
-        mCameraController.setFlash(flash);
+        mCameraEngine.setFlash(flash);
     }
 
 
@@ -1005,7 +1217,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @NonNull
     public Flash getFlash() {
-        return mCameraController.getFlash();
+        return mCameraEngine.getFlash();
     }
 
 
@@ -1014,6 +1226,8 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      *
      * @see Audio#OFF
      * @see Audio#ON
+     * @see Audio#MONO
+     * @see Audio#STEREO
      *
      * @param audio desired audio value
      */
@@ -1021,11 +1235,11 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
 
         if (audio == getAudio() || isClosed()) {
             // Check did took place, or will happen on start().
-            mCameraController.setAudio(audio);
+            mCameraEngine.setAudio(audio);
 
         } else if (checkPermissions(audio)) {
             // Camera is running. Pass.
-            mCameraController.setAudio(audio);
+            mCameraEngine.setAudio(audio);
 
         } else {
             // This means that the audio permission is being asked.
@@ -1043,8 +1257,40 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @NonNull
     public Audio getAudio() {
-        return mCameraController.getAudio();
+        return mCameraEngine.getAudio();
     }
+
+
+    /**
+     * Sets an {@link AutoFocusMarker} to be notified of autofocus start, end and fail events
+     * so that it can draw elements on screen.
+     *
+     * @param autoFocusMarker the marker, or null
+     */
+    public void setAutoFocusMarker(@Nullable AutoFocusMarker autoFocusMarker) {
+        mAutoFocusMarker = autoFocusMarker;
+        mMarkerLayout.onMarker(MarkerLayout.TYPE_AUTOFOCUS, autoFocusMarker);
+    }
+
+
+    /**
+     * Sets the current delay in milliseconds to reset the focus after an autofocus process.
+     *
+     * @param delayMillis desired delay (in milliseconds).  If the delay
+     *                    is less than or equal to 0 or equal to Long.MAX_VALUE,
+     *                    the autofocus will not be reset.
+     */
+    public void setAutoFocusResetDelay(long delayMillis) {
+        mCameraEngine.setAutoFocusResetDelay(delayMillis);
+    }
+
+
+    /**
+     * Returns the current delay in milliseconds to reset the focus after an autofocus process.
+     * @return the current autofocus reset delay in milliseconds.
+     */
+    @SuppressWarnings("unused")
+    public long getAutoFocusResetDelay() { return mCameraEngine.getAutoFocusResetDelay(); }
 
 
     /**
@@ -1057,7 +1303,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
     public void startAutoFocus(float x, float y) {
         if (x < 0 || x > getWidth()) throw new IllegalArgumentException("x should be >= 0 and <= getWidth()");
         if (y < 0 || y > getHeight()) throw new IllegalArgumentException("y should be >= 0 and <= getHeight()");
-        mCameraController.startAutoFocus(null, new PointF(x, y));
+        mCameraEngine.startAutoFocus(null, new PointF(x, y));
     }
 
 
@@ -1079,7 +1325,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param selector a size selector
      */
     public void setPreviewStreamSize(@NonNull SizeSelector selector) {
-        mCameraController.setPreviewStreamSizeSelector(selector);
+        mCameraEngine.setPreviewStreamSizeSelector(selector);
     }
 
 
@@ -1092,7 +1338,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param mode desired session type.
      */
     public void setMode(@NonNull Mode mode) {
-        mCameraController.setMode(mode);
+        mCameraEngine.setMode(mode);
     }
 
 
@@ -1102,7 +1348,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @NonNull
     public Mode getMode() {
-        return mCameraController.getMode();
+        return mCameraEngine.getMode();
     }
 
 
@@ -1115,7 +1361,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param selector a size selector
      */
     public void setPictureSize(@NonNull SizeSelector selector) {
-        mCameraController.setPictureSizeSelector(selector);
+        mCameraEngine.setPictureSizeSelector(selector);
     }
 
 
@@ -1128,7 +1374,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param selector a size selector
      */
     public void setVideoSize(@NonNull SizeSelector selector) {
-        mCameraController.setVideoSizeSelector(selector);
+        mCameraEngine.setVideoSizeSelector(selector);
     }
 
     /**
@@ -1138,15 +1384,16 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param bitRate desired bit rate
      */
     public void setVideoBitRate(int bitRate) {
-        mCameraController.setVideoBitRate(bitRate);
+        mCameraEngine.setVideoBitRate(bitRate);
     }
 
     /**
      * Returns the current video bit rate.
      * @return current bit rate
      */
+    @SuppressWarnings("unused")
     public int getVideoBitRate() {
-        return mCameraController.getVideoBitRate();
+        return mCameraEngine.getVideoBitRate();
     }
 
     /**
@@ -1156,15 +1403,16 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param bitRate desired bit rate
      */
     public void setAudioBitRate(int bitRate) {
-        mCameraController.setAudioBitRate(bitRate);
+        mCameraEngine.setAudioBitRate(bitRate);
     }
 
     /**
      * Returns the current audio bit rate.
      * @return current bit rate
      */
+    @SuppressWarnings("unused")
     public int getAudioBitRate() {
-        return mCameraController.getAudioBitRate();
+        return mCameraEngine.getAudioBitRate();
     }
 
     /**
@@ -1206,6 +1454,9 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
     public void addFrameProcessor(@Nullable FrameProcessor processor) {
         if (processor != null) {
             mFrameProcessors.add(processor);
+            if (mFrameProcessors.size() == 1) {
+                mCameraEngine.setHasFrameProcessors(true);
+            }
         }
     }
 
@@ -1218,6 +1469,9 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
     public void removeFrameProcessor(@Nullable FrameProcessor processor) {
         if (processor != null) {
             mFrameProcessors.remove(processor);
+            if (mFrameProcessors.size() == 0) {
+                mCameraEngine.setHasFrameProcessors(false);
+            }
         }
     }
 
@@ -1227,7 +1481,11 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * to preview frames.
      */
     public void clearFrameProcessors() {
+        boolean had = mFrameProcessors.size() > 0;
         mFrameProcessors.clear();
+        if (had) {
+            mCameraEngine.setHasFrameProcessors(false);
+        }
     }
 
 
@@ -1242,7 +1500,8 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @see #takePictureSnapshot()
      */
     public void takePicture() {
-        mCameraController.takePicture();
+        PictureResult.Stub stub = new PictureResult.Stub();
+        mCameraEngine.takePicture(stub);
     }
 
 
@@ -1257,8 +1516,8 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @see #takePicture()
      */
     public void takePictureSnapshot() {
-        if (getWidth() == 0 || getHeight() == 0) return;
-        mCameraController.takePictureSnapshot(AspectRatio.of(getWidth(), getHeight()));
+        PictureResult.Stub stub = new PictureResult.Stub();
+        mCameraEngine.takePictureSnapshot(stub);
     }
 
 
@@ -1269,7 +1528,8 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param file a file where the video will be saved
      */
     public void takeVideo(@NonNull File file) {
-        mCameraController.takeVideo(file);
+        VideoResult.Stub stub = new VideoResult.Stub();
+        mCameraEngine.takeVideo(stub, file);
         mUiHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -1289,8 +1549,8 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param file a file where the video will be saved
      */
     public void takeVideoSnapshot(@NonNull File file) {
-        if (getWidth() == 0 || getHeight() == 0) return;
-        mCameraController.takeVideoSnapshot(file, AspectRatio.of(getWidth(), getHeight()));
+        VideoResult.Stub stub = new VideoResult.Stub();
+        mCameraEngine.takeVideoSnapshot(stub, file);
         mUiHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -1377,7 +1637,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * This will fire {@link CameraListener#onVideoTaken(VideoResult)}.
      */
     public void stopVideo() {
-        mCameraController.stopVideo();
+        mCameraEngine.stopVideo();
         mUiHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -1394,7 +1654,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param maxWidth max width for snapshots
      */
     public void setSnapshotMaxWidth(int maxWidth) {
-        mCameraController.setSnapshotMaxWidth(maxWidth);
+        mCameraEngine.setSnapshotMaxWidth(maxWidth);
     }
 
     /**
@@ -1405,13 +1665,19 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param maxHeight max height for snapshots
      */
     public void setSnapshotMaxHeight(int maxHeight) {
-        mCameraController.setSnapshotMaxHeight(maxHeight);
+        mCameraEngine.setSnapshotMaxHeight(maxHeight);
     }
 
     /**
      * Returns the size used for snapshots, or null if it hasn't been computed
      * (for example if the surface is not ready). This is the preview size, rotated to match
      * the output orientation, and cropped to the visible part.
+     *
+     * This also includes the {@link #setSnapshotMaxWidth(int)} and
+     * {@link #setSnapshotMaxHeight(int)} constraints.
+     *
+     * This does NOT include any constraints specific to video encoding, which are
+     * device specific and depend on the capabilities of the device codec.
      *
      * @return the size of snapshots
      */
@@ -1421,11 +1687,12 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
 
         // Get the preview size and crop according to the current view size.
         // It's better to do calculations in the REF_VIEW reference, and then flip if needed.
-        Size preview = mCameraController.getUncroppedSnapshotSize(CameraController.REF_VIEW);
+        Size preview = mCameraEngine.getUncroppedSnapshotSize(Reference.VIEW);
+        if (preview == null) return null; // Should never happen.
         AspectRatio viewRatio = AspectRatio.of(getWidth(), getHeight());
         Rect crop = CropHelper.computeCrop(preview, viewRatio);
         Size cropSize = new Size(crop.width(), crop.height());
-        if (mCameraController.flip(CameraController.REF_VIEW, CameraController.REF_OUTPUT)) {
+        if (mCameraEngine.getAngles().flip(Reference.VIEW, Reference.OUTPUT)) {
             return cropSize.flip();
         } else {
             return cropSize;
@@ -1444,7 +1711,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @Nullable
     public Size getPictureSize() {
-        return mCameraController.getPictureSize(CameraController.REF_OUTPUT);
+        return mCameraEngine.getPictureSize(Reference.OUTPUT);
     }
 
 
@@ -1459,7 +1726,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @Nullable
     public Size getVideoSize() {
-        return mCameraController.getVideoSize(CameraController.REF_OUTPUT);
+        return mCameraEngine.getVideoSize(Reference.OUTPUT);
     }
 
 
@@ -1479,7 +1746,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
         if (requestCamera) permissions.add(Manifest.permission.CAMERA);
         if (requestAudio) permissions.add(Manifest.permission.RECORD_AUDIO);
         if (activity != null) {
-            activity.requestPermissions(permissions.toArray(new String[permissions.size()]),
+            activity.requestPermissions(permissions.toArray(new String[0]),
                     PERMISSION_REQUEST_CODE);
         }
     }
@@ -1504,7 +1771,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     public void setPlaySounds(boolean playSounds) {
         mPlaySounds = playSounds && Build.VERSION.SDK_INT >= 16;
-        mCameraController.setPlaySounds(playSounds);
+        mCameraEngine.setPlaySounds(playSounds);
     }
 
 
@@ -1518,6 +1785,27 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
         return mPlaySounds;
     }
 
+    /**
+     * Controls whether picture and video output should consider the current device orientation.
+     * For example, when true, if the user rotates the device before taking a picture, the picture
+     * will be rotated as well.
+     *
+     * @param useDeviceOrientation true to consider device orientation for outputs
+     */
+    public void setUseDeviceOrientation(boolean useDeviceOrientation) {
+        mUseDeviceOrientation = useDeviceOrientation;
+    }
+
+    /**
+     * Gets the current behavior for considering the device orientation when returning picture
+     * or video outputs.
+     *
+     * @see #setUseDeviceOrientation(boolean)
+     * @return whether we are using the device orientation for outputs
+     */
+    public boolean getUseDeviceOrientation() {
+        return mUseDeviceOrientation;
+    }
 
     /**
      * Sets the encoder for video recordings.
@@ -1530,7 +1818,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param codec requested video codec
      */
     public void setVideoCodec(@NonNull VideoCodec codec) {
-        mCameraController.setVideoCodec(codec);
+        mCameraEngine.setVideoCodec(codec);
     }
 
 
@@ -1540,7 +1828,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      */
     @NonNull
     public VideoCodec getVideoCodec() {
-        return mCameraController.getVideoCodec();
+        return mCameraEngine.getVideoCodec();
     }
 
 
@@ -1552,7 +1840,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param videoMaxSizeInBytes The maximum video size in bytes
      */
     public void setVideoMaxSize(long videoMaxSizeInBytes) {
-        mCameraController.setVideoMaxSize(videoMaxSizeInBytes);
+        mCameraEngine.setVideoMaxSize(videoMaxSizeInBytes);
     }
 
 
@@ -1564,7 +1852,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @return the maximum size in bytes
      */
     public long getVideoMaxSize() {
-        return mCameraController.getVideoMaxSize();
+        return mCameraEngine.getVideoMaxSize();
     }
 
 
@@ -1576,7 +1864,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @param videoMaxDurationMillis The maximum video duration in milliseconds
      */
     public void setVideoMaxDuration(int videoMaxDurationMillis) {
-        mCameraController.setVideoMaxDuration(videoMaxDurationMillis);
+        mCameraEngine.setVideoMaxDuration(videoMaxDurationMillis);
     }
 
 
@@ -1588,7 +1876,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @return the maximum duration in milliseconds
      */
     public int getVideoMaxDuration() {
-        return mCameraController.getVideoMaxDuration();
+        return mCameraEngine.getVideoMaxDuration();
     }
 
 
@@ -1597,7 +1885,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @return boolean indicating if the camera is recording a video
      */
     public boolean isTakingVideo() {
-        return mCameraController.isTakingVideo();
+        return mCameraEngine.isTakingVideo();
     }
 
 
@@ -1606,33 +1894,36 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
      * @return boolean indicating if the camera is capturing a picture
      */
     public boolean isTakingPicture() {
-        return mCameraController.isTakingPicture();
+        return mCameraEngine.isTakingPicture();
     }
 
     //endregion
 
     //region Callbacks and dispatching
 
-    interface CameraCallbacks extends OrientationHelper.Callback {
-        void dispatchOnCameraOpened(CameraOptions options);
-        void dispatchOnCameraClosed();
-        void onCameraPreviewStreamSizeChanged();
-        void onShutter(boolean shouldPlaySound);
-        void dispatchOnVideoTaken(VideoResult result);
-        void dispatchOnPictureTaken(PictureResult result);
-        void dispatchOnFocusStart(@Nullable Gesture trigger, @NonNull PointF where);
-        void dispatchOnFocusEnd(@Nullable Gesture trigger, boolean success, @NonNull PointF where);
-        void dispatchOnZoomChanged(final float newValue, @Nullable final PointF[] fingers);
-        void dispatchOnExposureCorrectionChanged(float newValue, @NonNull float[] bounds, @Nullable PointF[] fingers);
-        void dispatchFrame(Frame frame);
-        void dispatchError(CameraException exception);
-    }
-
-    private class Callbacks implements CameraCallbacks {
+    @VisibleForTesting
+    class CameraCallbacks implements
+            CameraEngine.Callback,
+            OrientationHelper.Callback,
+            GestureFinder.Controller {
 
         private CameraLogger mLogger = CameraLogger.create(CameraCallbacks.class.getSimpleName());
 
-        Callbacks() {}
+        @NonNull
+        @Override
+        public Context getContext() {
+            return CameraView.this.getContext();
+        }
+
+        @Override
+        public int getWidth() {
+            return CameraView.this.getWidth();
+        }
+
+        @Override
+        public int getHeight() {
+            return CameraView.this.getHeight();
+        }
 
         @Override
         public void dispatchOnCameraOpened(final CameraOptions options) {
@@ -1678,17 +1969,17 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
         @Override
         public void onShutter(boolean shouldPlaySound) {
             if (shouldPlaySound && mPlaySounds) {
-                //noinspection all
                 playSound(MediaActionSound.SHUTTER_CLICK);
             }
         }
 
         @Override
-        public void dispatchOnPictureTaken(final PictureResult result) {
-            mLogger.i("dispatchOnPictureTaken");
+        public void dispatchOnPictureTaken(final PictureResult.Stub stub) {
+            mLogger.i("dispatchOnPictureTaken", stub);
             mUiHandler.post(new Runnable() {
                 @Override
                 public void run() {
+                    PictureResult result = new PictureResult(stub);
                     for (CameraListener listener : mListeners) {
                         listener.onPictureTaken(result);
                     }
@@ -1697,13 +1988,14 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
         }
 
         @Override
-        public void dispatchOnVideoTaken(final VideoResult video) {
-            mLogger.i("dispatchOnVideoTaken", video);
+        public void dispatchOnVideoTaken(final VideoResult.Stub stub) {
+            mLogger.i("dispatchOnVideoTaken", stub);
             mUiHandler.post(new Runnable() {
                 @Override
                 public void run() {
+                    VideoResult result = new VideoResult(stub);
                     for (CameraListener listener : mListeners) {
-                        listener.onVideoTaken(video);
+                        listener.onVideoTaken(result);
                     }
                 }
             });
@@ -1715,12 +2007,15 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
             mUiHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (gesture != null && mGestureMap.get(gesture) == GestureAction.FOCUS_WITH_MARKER) {
-                        mTapGestureLayout.onFocusStart(point);
+                    mMarkerLayout.onEvent(MarkerLayout.TYPE_AUTOFOCUS, new PointF[]{ point });
+                    if (mAutoFocusMarker != null) {
+                        AutoFocusTrigger trigger = gesture != null ?
+                                AutoFocusTrigger.GESTURE : AutoFocusTrigger.METHOD;
+                        mAutoFocusMarker.onAutoFocusStart(trigger, point);
                     }
 
                     for (CameraListener listener : mListeners) {
-                        listener.onFocusStart(point);
+                        listener.onAutoFocusStart(point);
                     }
                 }
             });
@@ -1734,16 +2029,17 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
                 @Override
                 public void run() {
                     if (success && mPlaySounds) {
-                        //noinspection all
                         playSound(MediaActionSound.FOCUS_COMPLETE);
                     }
 
-                    if (gesture != null && mGestureMap.get(gesture) == GestureAction.FOCUS_WITH_MARKER) {
-                        mTapGestureLayout.onFocusEnd(success);
+                    if (mAutoFocusMarker != null) {
+                        AutoFocusTrigger trigger = gesture != null ?
+                                AutoFocusTrigger.GESTURE : AutoFocusTrigger.METHOD;
+                        mAutoFocusMarker.onAutoFocusEnd(trigger, success, point);
                     }
 
                     for (CameraListener listener : mListeners) {
-                        listener.onFocusEnd(success, point);
+                        listener.onAutoFocusEnd(success, point);
                     }
                 }
             });
@@ -1752,8 +2048,15 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
         @Override
         public void onDeviceOrientationChanged(int deviceOrientation) {
             mLogger.i("onDeviceOrientationChanged", deviceOrientation);
-            mCameraController.setDeviceOrientation(deviceOrientation);
             int displayOffset = mOrientationHelper.getDisplayOffset();
+            if (!mUseDeviceOrientation) {
+                // To fool the engine to return outputs in the VIEW reference system,
+                // The device orientation should be set to -displayOffset.
+                int fakeDeviceOrientation = (360 - displayOffset) % 360;
+                mCameraEngine.getAngles().setDeviceOrientation(fakeDeviceOrientation);
+            } else {
+                mCameraEngine.getAngles().setDeviceOrientation(deviceOrientation);
+            }
             final int value = (deviceOrientation + displayOffset) % 360;
             mUiHandler.post(new Runnable() {
                 @Override
@@ -1795,21 +2098,27 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
 
         @Override
         public void dispatchFrame(final Frame frame) {
+            mLogger.v("dispatchFrame:", frame.getTime(), "processors:", mFrameProcessors.size());
             if (mFrameProcessors.isEmpty()) {
                 // Mark as released. This instance will be reused.
                 frame.release();
-            } else {
-                mLogger.v("dispatchFrame:", frame.getTime(), "processors:", mFrameProcessors.size());
-                mFrameProcessorsHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        for (FrameProcessor processor : mFrameProcessors) {
-                            processor.process(frame);
-                        }
-                        frame.release();
-                    }
-                });
+                return;
             }
+            mFrameProcessorsHandler.run(new Runnable() {
+                @Override
+                public void run() {
+                    for (FrameProcessor processor : mFrameProcessors) {
+                        try {
+                            processor.process(frame);
+                        } catch (Exception e) {
+                            mLogger.w("dispatchFrame:",
+                                    "Error during processor implementation.",
+                                    "Can happen when camera is closed while processors are running.", e);
+                        }
+                    }
+                    frame.release();
+                }
+            });
         }
 
         @Override
@@ -1824,11 +2133,111 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
                 }
             });
         }
+
+        @Override
+        public void dispatchOnVideoRecordingStart() {
+            mLogger.i("dispatchOnVideoRecordingStart");
+            mUiHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    for (CameraListener listener : mListeners) {
+                        listener.onVideoRecordingStart();
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void dispatchOnVideoRecordingEnd() {
+            mLogger.i("dispatchOnVideoRecordingEnd");
+            mUiHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    for (CameraListener listener : mListeners) {
+                        listener.onVideoRecordingEnd();
+                    }
+                }
+            });
+        }
     }
 
     //endregion
 
-    //region deprecated APIs
+    //region Overlays
+
+    @Override
+    public LayoutParams generateLayoutParams(AttributeSet attributeSet) {
+        if (!mInEditor && mOverlayLayout.isOverlay(attributeSet)) {
+            return mOverlayLayout.generateLayoutParams(attributeSet);
+        }
+        return super.generateLayoutParams(attributeSet);
+    }
+
+    // We don't support removeView on overlays for now.
+    @Override
+    public void addView(View child, int index, ViewGroup.LayoutParams params) {
+        if (!mInEditor && mOverlayLayout.isOverlay(params)) {
+            mOverlayLayout.addView(child, params);
+        } else {
+            super.addView(child, index, params);
+        }
+    }
+
+    //endregion
+
+    //region Filters
+
+    /**
+     * Applies a real-time filter to the camera preview, if it supports it.
+     * The only preview type that does so is currently {@link Preview#GL_SURFACE}.
+     *
+     * The filter will be applied to any picture snapshot taken with
+     * {@link #takePictureSnapshot()} and any video snapshot taken with
+     * {@link #takeVideoSnapshot(File)}.
+     *
+     * Use {@link NoFilter} to clear the existing filter,
+     * and take a look at the {@link Filters} class for commonly used filters.
+     *
+     * This method will throw an exception if the current preview does not support real-time filters.
+     * Make sure you use {@link Preview#GL_SURFACE} (the default).
+     *
+     * @see Filters
+     * @param filter a new filter
+     */
+    public void setFilter(@NonNull Filter filter) {
+        if (mCameraPreview == null) {
+            mPendingFilter = filter;
+        } else if (!(filter instanceof NoFilter) && !mExperimental) {
+            throw new RuntimeException("Filters are an experimental features and need the experimental flag set.");
+        } else if (mCameraPreview instanceof FilterCameraPreview) {
+            ((FilterCameraPreview) mCameraPreview).setFilter(filter);
+        } else {
+            throw new RuntimeException("Filters are only supported by the GL_SURFACE preview. Current:" + mPreview);
+        }
+    }
+
+    /**
+     * Returns the current real-time filter applied to the camera preview.
+     *
+     * This method will throw an exception if the current preview does not support real-time filters.
+     * Make sure you use {@link Preview#GL_SURFACE} (the default).
+     *
+     * @see #setFilter(Filter)
+     * @return the current filter
+     */
+    @NonNull
+    public Filter getFilter() {
+        if (!mExperimental) {
+            throw new RuntimeException("Filters are an experimental features and need the experimental flag set.");
+        } else if (mCameraPreview == null) {
+            return mPendingFilter;
+        } else if (mCameraPreview instanceof FilterCameraPreview) {
+            return ((FilterCameraPreview) mCameraPreview).getCurrentFilter();
+        } else {
+            throw new RuntimeException("Filters are only supported by the GL_SURFACE preview. Current:" + mPreview);
+        }
+
+    }
 
     //endregion
 }

@@ -22,42 +22,57 @@
         <attr name="cameraVideoSizeBiggest" format="boolean"/>
         <attr name="cameraVideoSizeAspectRatio" format="string|reference"/>
 
-        <attr name="cameraVideoBitRate" format="integer|reference" />
-        <attr name="cameraAudioBitRate" format="integer|reference" />
-
         <attr name="cameraSnapshotMaxWidth" format="integer|reference" />
         <attr name="cameraSnapshotMaxHeight" format="integer|reference" />
 
+        <attr name="cameraVideoBitRate" format="integer|reference" />
+        <attr name="cameraAudioBitRate" format="integer|reference" />
+
         <attr name="cameraGestureTap" format="enum">
             <enum name="none" value="0" />
-            <enum name="focus" value="1" />
-            <enum name="focusWithMarker" value="2" />
-            <enum name="capture" value="3" />
+            <enum name="autoFocus" value="1" />
+            <enum name="takePicture" value="2" />
         </attr>
 
         <attr name="cameraGestureLongTap" format="enum">
             <enum name="none" value="0" />
-            <enum name="focus" value="1" />
-            <enum name="focusWithMarker" value="2" />
-            <enum name="capture" value="3" />
+            <enum name="autoFocus" value="1" />
+            <enum name="takePicture" value="2" />
         </attr>
 
         <attr name="cameraGesturePinch" format="enum">
             <enum name="none" value="0" />
-            <enum name="zoom" value="4" />
-            <enum name="exposureCorrection" value="5" />
+            <enum name="zoom" value="3" />
+            <enum name="exposureCorrection" value="4" />
+            <enum name="filterControl1" value="5" />
+            <enum name="filterControl2" value="6" />
         </attr>
 
         <attr name="cameraGestureScrollHorizontal" format="enum">
             <enum name="none" value="0" />
-            <enum name="zoom" value="4" />
-            <enum name="exposureCorrection" value="5" />
+            <enum name="zoom" value="3" />
+            <enum name="exposureCorrection" value="4" />
+            <enum name="filterControl1" value="5" />
+            <enum name="filterControl2" value="6" />
         </attr>
 
         <attr name="cameraGestureScrollVertical" format="enum">
             <enum name="none" value="0" />
-            <enum name="zoom" value="4" />
-            <enum name="exposureCorrection" value="5" />
+            <enum name="zoom" value="3" />
+            <enum name="exposureCorrection" value="4" />
+            <enum name="filterControl1" value="5" />
+            <enum name="filterControl2" value="6" />
+        </attr>
+
+        <attr name="cameraEngine" format="enum">
+            <enum name="camera1" value="0" />
+            <enum name="camera2" value="1" />
+        </attr>
+
+        <attr name="cameraPreview" format="enum">
+            <enum name="surface" value="0" />
+            <enum name="texture" value="1" />
+            <enum name="glSurface" value="2" />
         </attr>
 
         <attr name="cameraFacing" format="enum">
@@ -85,15 +100,6 @@
             <enum name="cloudy" value="4" />
         </attr>
 
-        <attr name="cameraGrid" format="enum">
-            <enum name="off" value="0" />
-            <enum name="draw3x3" value="1" />
-            <enum name="draw4x4" value="2" />
-            <enum name="drawPhi" value="3" />
-        </attr>
-
-        <attr name="cameraGridColor" format="color|reference"/>
-
         <attr name="cameraMode" format="enum">
             <enum name="picture" value="0" />
             <enum name="video" value="1" />
@@ -102,13 +108,18 @@
         <attr name="cameraAudio" format="enum">
             <enum name="off" value="0" />
             <enum name="on" value="1" />
+            <enum name="mono" value="2" />
+            <enum name="stereo" value="3" />
         </attr>
 
-        <attr name="cameraPreview" format="enum">
-            <enum name="surface" value="0" />
-            <enum name="texture" value="1" />
-            <enum name="glSurface" value="2" />
+        <attr name="cameraGrid" format="enum">
+            <enum name="off" value="0" />
+            <enum name="draw3x3" value="1" />
+            <enum name="draw4x4" value="2" />
+            <enum name="drawPhi" value="3" />
         </attr>
+
+        <attr name="cameraGridColor" format="color|reference"/>
 
         <attr name="cameraPlaySounds" format="boolean" />
 
@@ -122,7 +133,22 @@
             <enum name="h264" value="2" />
         </attr>
 
+        <attr name="cameraAutoFocusResetDelay" format="integer|reference"/>
+
+        <attr name="cameraAutoFocusMarker" format="string|reference"/>
+
+        <attr name="cameraFilter" format="string|reference"/>
+
+        <attr name="cameraUseDeviceOrientation" format="boolean"/>
+
         <attr name="cameraExperimental" format="boolean" />
+
+    </declare-styleable>
+
+    <declare-styleable name="CameraView_Layout">
+        <attr name="layout_drawOnPreview" format="boolean"/>
+        <attr name="layout_drawOnPictureSnapshot" format="boolean"/>
+        <attr name="layout_drawOnVideoSnapshot" format="boolean"/>
 
     </declare-styleable>
 </resources>

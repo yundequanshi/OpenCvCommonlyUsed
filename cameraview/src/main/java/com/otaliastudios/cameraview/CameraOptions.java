@@ -1,11 +1,38 @@
 package com.otaliastudios.cameraview;
 
 
-import android.annotation.TargetApi;
+import android.graphics.ImageFormat;
 import android.hardware.Camera;
+import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
-
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.CamcorderProfile;
+import android.media.MediaRecorder;
+import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
+import android.util.Range;
+import android.util.Rational;
+
+import com.otaliastudios.cameraview.controls.Audio;
+import com.otaliastudios.cameraview.controls.Control;
+import com.otaliastudios.cameraview.controls.Engine;
+import com.otaliastudios.cameraview.controls.Facing;
+import com.otaliastudios.cameraview.controls.Flash;
+import com.otaliastudios.cameraview.controls.Preview;
+import com.otaliastudios.cameraview.engine.Mapper;
+import com.otaliastudios.cameraview.gesture.GestureAction;
+import com.otaliastudios.cameraview.controls.Grid;
+import com.otaliastudios.cameraview.controls.Hdr;
+import com.otaliastudios.cameraview.controls.Mode;
+import com.otaliastudios.cameraview.controls.VideoCodec;
+import com.otaliastudios.cameraview.controls.WhiteBalance;
+import com.otaliastudios.cameraview.internal.utils.CamcorderProfiles;
+import com.otaliastudios.cameraview.size.AspectRatio;
+import com.otaliastudios.cameraview.size.Size;
+
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,11 +61,9 @@ public class CameraOptions {
     private boolean autoFocusSupported;
 
 
-    // Camera1 constructor.
-    @SuppressWarnings("deprecation")
-    CameraOptions(@NonNull Camera.Parameters params, boolean flipSizes) {
+    public CameraOptions(@NonNull Camera.Parameters params, boolean flipSizes) {
         List<String> strings;
-        Mapper mapper = new Mapper1();
+        Mapper mapper = Mapper.get(Engine.CAMERA1);
 
         // Facing
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
@@ -77,7 +102,10 @@ public class CameraOptions {
             }
         }
 
+        // zoom
         zoomSupported = params.isZoomSupported();
+
+        // autofocus
         autoFocusSupported = params.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_AUTO);
 
         // Exposure correction
@@ -117,11 +145,110 @@ public class CameraOptions {
         }
     }
 
+    // Camera2Engine constructor.
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    public CameraOptions(@NonNull CameraManager manager, @NonNull String  cameraId, boolean flipSizes) throws CameraAccessException {
+        Mapper mapper = Mapper.get(Engine.CAMERA2);
+        CameraCharacteristics cameraCharacteristics = manager.getCameraCharacteristics(cameraId);
 
-    // Camera2 constructor.
-    @TargetApi(21)
-    CameraOptions(@NonNull CameraCharacteristics params) {}
+        // Facing
+        for (String cameraId1 : manager.getCameraIdList()) {
+            CameraCharacteristics cameraCharacteristics1 = manager.getCameraCharacteristics(cameraId1);
+            Integer cameraFacing = cameraCharacteristics1.get(CameraCharacteristics.LENS_FACING);
+            if (cameraFacing != null) {
+                Facing value = mapper.unmapFacing(cameraFacing);
+                if (value != null) supportedFacing.add(value);
+            }
+        }
 
+        // WB
+        int[] awbModes = cameraCharacteristics.get(CameraCharacteristics.CONTROL_AWB_AVAILABLE_MODES);
+        //noinspection ConstantConditions
+        for (int awbMode : awbModes) {
+            WhiteBalance value = mapper.unmapWhiteBalance(awbMode);
+            if (value != null) supportedWhiteBalance.add(value);
+        }
+
+        // Flash
+        supportedFlash.add(Flash.OFF);
+        Boolean hasFlash = cameraCharacteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+        if (hasFlash != null && hasFlash) {
+            int[] aeModes = cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES);
+            //noinspection ConstantConditions
+            for (int aeMode : aeModes) {
+                Flash value = mapper.unmapFlash(aeMode);
+                if (value != null) supportedFlash.add(value);
+            }
+            // Check for torch specifically since the Mapper flash support is not so good.
+            // If OFF works, it means we have AE_MODE_OFF or AE_MODE_ON. This means we can use
+            // the torch control.
+            if (supportedFlash.contains(Flash.OFF)) {
+                supportedFlash.add(Flash.TORCH);
+            }
+        }
+
+        // HDR
+        supportedHdr.add(Hdr.OFF);
+        int[] sceneModes = cameraCharacteristics.get(CameraCharacteristics.CONTROL_AVAILABLE_SCENE_MODES);
+        //noinspection ConstantConditions
+        for (int sceneMode : sceneModes) {
+            Hdr value = mapper.unmapHdr(sceneMode);
+            if (value != null) supportedHdr.add(value);
+        }
+
+        //zoom
+        Float maxZoom = cameraCharacteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
+        if(maxZoom != null) {
+            zoomSupported = maxZoom > 1;
+        }
+
+
+        // autofocus
+        int[] afModes = cameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+        autoFocusSupported = false;
+        //noinspection ConstantConditions
+        for (int afMode : afModes) {
+            if (afMode == CameraCharacteristics.CONTROL_AF_MODE_AUTO) {
+                autoFocusSupported = true;
+            }
+        }
+
+        // Exposure correction
+        Range<Integer> exposureRange = cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+        Rational exposureStep = cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+        if (exposureRange != null && exposureStep != null && exposureStep.floatValue() != 0) {
+            exposureCorrectionMinValue = exposureRange.getLower() / exposureStep.floatValue();
+            exposureCorrectionMaxValue = exposureRange.getUpper() / exposureStep.floatValue();
+        }
+        exposureCorrectionSupported = exposureCorrectionMinValue != 0 && exposureCorrectionMaxValue != 0;
+
+
+        // Picture Sizes
+        StreamConfigurationMap streamMap = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        if (streamMap == null) throw new RuntimeException("StreamConfigurationMap is null. Should not happen.");
+        android.util.Size[] psizes = streamMap.getOutputSizes(ImageFormat.JPEG);
+        for (android.util.Size size : psizes) {
+            int width = flipSizes ? size.getHeight() : size.getWidth();
+            int height = flipSizes ? size.getWidth() : size.getHeight();
+            supportedPictureSizes.add(new Size(width, height));
+            supportedPictureAspectRatio.add(AspectRatio.of(width, height));
+        }
+
+        // Video Sizes
+        // As a safety measure, remove Sizes bigger than CamcorderProfile.highest
+        CamcorderProfile profile = CamcorderProfiles.get(cameraId,
+                new Size(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        Size videoMaxSize = new Size(profile.videoFrameWidth, profile.videoFrameHeight);
+        android.util.Size[] vsizes = streamMap.getOutputSizes(MediaRecorder.class);
+        for (android.util.Size size : vsizes) {
+            if (size.getWidth() <= videoMaxSize.getWidth() && size.getHeight() <= videoMaxSize.getHeight()) {
+                int width = flipSizes ? size.getHeight() : size.getWidth();
+                int height = flipSizes ? size.getWidth() : size.getHeight();
+                supportedVideoSizes.add(new Size(width, height));
+                supportedVideoAspectRatio.add(AspectRatio.of(width, height));
+            }
+        }
+    }
 
     /**
      * Shorthand for getSupported*().contains(value).
@@ -143,10 +270,11 @@ public class CameraOptions {
      */
     public boolean supports(@NonNull GestureAction action) {
         switch (action) {
-            case FOCUS:
-            case FOCUS_WITH_MARKER:
+            case AUTO_FOCUS:
                 return isAutoFocusSupported();
-            case CAPTURE:
+            case TAKE_PICTURE:
+            case FILTER_CONTROL_1:
+            case FILTER_CONTROL_2:
             case NONE:
                 return true;
             case ZOOM:
@@ -177,6 +305,10 @@ public class CameraOptions {
             return (Collection<T>) Arrays.asList(VideoCodec.values());
         } else if (controlClass.equals(WhiteBalance.class)) {
             return (Collection<T>) getSupportedWhiteBalance();
+        } else if (controlClass.equals(Engine.class)) {
+            return (Collection<T>) Arrays.asList(Engine.values());
+        } else if (controlClass.equals(Preview.class)) {
+            return (Collection<T>) Arrays.asList(Preview.values());
         }
         // Unrecognized control.
         return Collections.emptyList();
@@ -188,7 +320,6 @@ public class CameraOptions {
      *
      * @return a collection of supported values.
      */
-    @SuppressWarnings("WeakerAccess")
     @NonNull
     public Collection<Size> getSupportedPictureSizes() {
         return Collections.unmodifiableSet(supportedPictureSizes);
@@ -212,7 +343,6 @@ public class CameraOptions {
      *
      * @return a collection of supported values.
      */
-    @SuppressWarnings("WeakerAccess")
     @NonNull
     public Collection<Size> getSupportedVideoSizes() {
         return Collections.unmodifiableSet(supportedVideoSizes);
@@ -238,7 +368,6 @@ public class CameraOptions {
      * @see Facing#FRONT
      * @return a collection of supported values.
      */
-    @SuppressWarnings("WeakerAccess")
     @NonNull
     public Collection<Facing> getSupportedFacing() {
         return Collections.unmodifiableSet(supportedFacing);
@@ -254,7 +383,6 @@ public class CameraOptions {
      * @see Flash#TORCH
      * @return a collection of supported values.
      */
-    @SuppressWarnings("WeakerAccess")
     @NonNull
     public Collection<Flash> getSupportedFlash() {
         return Collections.unmodifiableSet(supportedFlash);
@@ -271,7 +399,6 @@ public class CameraOptions {
      * @see WhiteBalance#CLOUDY
      * @return a collection of supported values.
      */
-    @SuppressWarnings("WeakerAccess")
     @NonNull
     public Collection<WhiteBalance> getSupportedWhiteBalance() {
         return Collections.unmodifiableSet(supportedWhiteBalance);
@@ -297,7 +424,6 @@ public class CameraOptions {
      *
      * @return whether zoom is supported.
      */
-    @SuppressWarnings("WeakerAccess")
     public boolean isZoomSupported() {
         return zoomSupported;
     }
@@ -305,12 +431,10 @@ public class CameraOptions {
 
     /**
      * Whether auto focus is supported. This means you can map gestures to
-     * {@link GestureAction#FOCUS} or {@link GestureAction#FOCUS_WITH_MARKER}
-     * and focus will be changed on tap.
+     * {@link GestureAction#AUTO_FOCUS} and focus will be changed on tap.
      *
      * @return whether auto focus is supported.
      */
-    @SuppressWarnings("WeakerAccess")
     public boolean isAutoFocusSupported() {
         return autoFocusSupported;
     }
@@ -324,7 +448,6 @@ public class CameraOptions {
      * @see #getExposureCorrectionMaxValue()
      * @return whether exposure correction is supported.
      */
-    @SuppressWarnings("WeakerAccess")
     public boolean isExposureCorrectionSupported() {
         return exposureCorrectionSupported;
     }
@@ -336,7 +459,6 @@ public class CameraOptions {
      *
      * @return min EV value
      */
-    @SuppressWarnings("WeakerAccess")
     public float getExposureCorrectionMinValue() {
         return exposureCorrectionMinValue;
     }
@@ -348,7 +470,6 @@ public class CameraOptions {
      *
      * @return max EV value
      */
-    @SuppressWarnings("WeakerAccess")
     public float getExposureCorrectionMaxValue() {
         return exposureCorrectionMaxValue;
     }

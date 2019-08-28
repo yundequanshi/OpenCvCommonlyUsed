@@ -5,6 +5,9 @@ import android.location.Location;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.otaliastudios.cameraview.controls.Facing;
+import com.otaliastudios.cameraview.size.Size;
+
 import java.io.File;
 
 
@@ -12,20 +15,45 @@ import java.io.File;
  * Wraps the picture captured by {@link CameraView#takePicture()} or
  * {@link CameraView#takePictureSnapshot()}.
  */
+@SuppressWarnings("unused")
 public class PictureResult {
+
+    /**
+     * A result stub, for internal use only.
+     */
+    public static class Stub {
+
+        Stub() {}
+
+        public boolean isSnapshot;
+        public Location location;
+        public int rotation;
+        public Size size;
+        public Facing facing;
+        public byte[] data;
+        public int format;
+    }
 
     public final static int FORMAT_JPEG = 0;
     // public final static int FORMAT_PNG = 1;
 
-    boolean isSnapshot;
-    Location location;
-    int rotation;
-    Size size;
-    Facing facing;
-    byte[] data;
-    int format;
+    private final boolean isSnapshot;
+    private final Location location;
+    private final int rotation;
+    private final Size size;
+    private final Facing facing;
+    private final byte[] data;
+    private final int format;
 
-    PictureResult() {}
+    PictureResult(@NonNull Stub builder) {
+        isSnapshot = builder.isSnapshot;
+        location = builder.location;
+        rotation = builder.rotation;
+        size = builder.size;
+        facing = builder.facing;
+        data = builder.data;
+        format = builder.format;
+    }
 
     /**
      * Returns whether this result comes from a snapshot.
